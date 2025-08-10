@@ -90,6 +90,8 @@ const { uploadd } = require("../middelwere/multer");
 const checkBlacklist = require('../middelwere/BlackListToken');
 const { upload } = require("../config/cloudinary");
 const { addComment, addReply, getComments, likeComment } = require('../controllers/commentController');
+const {submitReport, getPendingReports, resolveReport} = require('../controllers/reportController');
+const {getInstagramQrCode} = require('../controllers/qrController');
 
 const router = express.Router();
 /**
@@ -4605,6 +4607,8 @@ router.post("/FetchPhotoGraphyForHome",authMiddelWere,FetchPhotoGraphyForHome)
  *   post:
  *     summary: Add a new comment to a post
  *     description: Creates a new comment for a specific post. The user is identified by the authentication token.
+ *     tags:
+ *       - Comments
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -4655,6 +4659,8 @@ router.post('/:postId/comments', authMiddelWere, addComment);
  *   post:
  *     summary: Add a reply to a comment
  *     description: Adds a new reply to an existing comment. The user is identified by the authentication token.
+ *     tags:
+ *       - Comments
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -4845,6 +4851,147 @@ router.get('/:postId/share-url', authMiddelWere, getShareablePostUrl);
  *         description: Internal server error.
  */
 router.put('/:postId/save', authMiddelWere, toggleSavePost);
+
+/**
+ * @swagger
+ * /user/reports:
+ *   post:
+ *     summary: Submit a report
+ *     description: Allows a user to report a post or comment for inappropriate content.
+ *     tags:
+ *       - Reports
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - reporter
+ *               - reason
+ *             properties:
+ *               reporter:
+ *                 type: string
+ *                 description: ID of the user reporting the content.
+ *               reportedPost:
+ *                 type: string
+ *                 description: ID of the post being reported (optional).
+ *               reportedComment:
+ *                 type: string
+ *                 description: ID of the comment being reported (optional).
+ *               reason:
+ *                 type: string
+ *                 enum: [spam, hate_speech, nudity, violence, other]
+ *                 description: Reason for reporting.
+ *     responses:
+ *       201:
+ *         description: Report submitted successfully.
+ *       400:
+ *         description: Invalid input.
+ *       500:
+ *         description: Internal server error.
+ */
+router.post('/reports', authMiddelWere, submitReport);
+
+/**
+ * @swagger
+ * /user/reports/pending:
+ *   get:
+ *     summary: Get pending reports
+ *     description: Retrieves all reports with status 'pending'.
+ *     tags:
+ *       - Reports
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of pending reports.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Report'
+ *       500:
+ *         description: Internal server error.
+ */
+router.get('/reports/pending', authMiddelWere, getPendingReports);
+
+/**
+ * @swagger
+ * /user/reports/{id}:
+ *   put:
+ *     summary: Update report status
+ *     description: Allows an admin to update the status of a report.
+ *     tags:
+ *       - Reports
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the report to update.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [pending, under_review, resolved, dismissed]
+ *                 description: New status of the report.
+ *     responses:
+ *       200:
+ *         description: Report updated successfully.
+ *       404:
+ *         description: Report not found.
+ *       500:
+ *         description: Internal server error.
+ */
+router.put('/reports/:id', authMiddelWere, resolveReport);
+
+/**
+ * @swagger
+ * /user/qrCode:
+ *   get:
+ *     summary: Generate camMe QR Code
+ *     description: Generates a QR code that links to a user's camMe profile.
+ *     tags:
+ *       - QR Code
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: camMe userId to generate QR code for.
+ *     responses:
+ *       200:
+ *         description: QR code generated successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 qrCode:
+ *                   type: string
+ *                   format: uri
+ *                   example: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+ *       400:
+ *         description: Missing or invalid username.
+ *       500:
+ *         description: Internal server error.
+ */
+router.get('/qrCode', authMiddelWere, getInstagramQrCode);
 
 
 
