@@ -6,7 +6,7 @@ exports.addComment = async (req, res) => {
     try {
         const { postId } = req.params;
         const { text } = req.body;
-        const postedBy = req.user.userId ; // User ID from the JWT token
+        const postedBy = req.user.userId ; 
 
         const post = await Post.findById(postId);
         if (!post) {
