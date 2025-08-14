@@ -4558,6 +4558,20 @@ exports.giveTedBlackCoin = async (req, res) => {
             return res.status(200).json({ success: false, message: "Post owner not found" });
         }
 
+        // Restrict to 5 TedBlack coins per 24 hours (unique posts)
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const recentBlackCoins = await Postcreate.find({
+            "tedBlackCoinData.givenBy": authorizedUserId,
+            "tedBlackCoinData.createdAt": { $gte: twentyFourHoursAgo }
+        }).countDocuments();
+
+        if (recentBlackCoins >= 5) {
+            return res.status(429).json({
+                success: false,
+                message: "You can only give 5 TedBlack coins to 5 different posts in 24 hours."
+            });
+        }
+
 
         // if (user.posts.length >= 10) {
         //     user.points = (user.points || 0) + 5; // Increment points
@@ -4827,7 +4841,7 @@ exports.giveTedBlackCoin = async (req, res) => {
                 console.log("Black Coin Voting Ended SucessFully")
                 await updatedPost.save();
             }
-        }, 60 * 60 * 1000); // 60 minutes
+        }, 90 * 60 * 1000); // 90 minutes
 
         return res.status(200).json({
             success: true,
@@ -6835,6 +6849,15 @@ exports.getShareablePostUrl = async (req, res) => {
     const { postId } = req.params;
 
     const post = await Postcreate.findById(postId);
+
+    const userId = req.user.userId;
+
+    const user = await User.findById(userId).populate('userAllFriends', '_id fullName userName profilePic');
+
+    if (!user) {
+        return res.status(200).json({ success: false, message: "User not found" });
+    }
+
     if (!post) {
       return res.status(404).json({ success: false, message: 'Post not found' });
     }
@@ -6845,6 +6868,7 @@ exports.getShareablePostUrl = async (req, res) => {
       success: true,
       shareUrl,
       message: 'Shareable URL generated successfully',
+      friends: user.userAllFriends // Add the user's friends to the response
     });
   } catch (error) {
     console.error(error);
