@@ -22,6 +22,7 @@ const { v4: uuidv4 } = require('uuid'); // UUID generator
 const totalTedCoinLogicSchema = require('../models/totalTedCoinLogicSchema');
 const mapSetting = require("../models/mapSettingSchema")
 const ApporachMode = require("../models/ApporachRequestSchema")
+const ContentMapping = require('../models/contentMapping');
 
 const transPorter = nodeMailer.createTransport({
     service: "gmail",
@@ -4759,6 +4760,7 @@ exports.giveTedBlackCoin = async (req, res) => {
                 const { agree, disagree } = updatedPost.tedBlackCoinData;
                 const totalVotes = agree.length + disagree.length;
                 const agreePercentage = totalVotes > 0 ? (agree.length / totalVotes) * 100 : 0;
+                const disagreePercentage = totalVotes > 0 ? (disagree.length / totalVotes) * 100 : 0;
                 console.log("Inside setTimeOut giveTedBlackCoin")
 
 
@@ -4775,7 +4777,7 @@ exports.giveTedBlackCoin = async (req, res) => {
                 // tedBlackRecord.disAgree = disagree.length || 0;
 
 
-                if (agreePercentage >= 70) {
+                if (agreePercentage >= 75) {
                     const postCreator = await User.findById(updatedPost.userId);
                     console.log("Initial state black coin giveTedBlackCoin")
                     const updatedTiers = [
@@ -4832,8 +4834,18 @@ exports.giveTedBlackCoin = async (req, res) => {
                     await postCreator.save();
                     await updatedPost.save();
                     console.log("Complited giving coin giveTedBlackCoin")
-                } else {
+                } else if(disagreePercentage >= 25) {
                     tedBlackRecord.status = "Reject TedBlack";
+                }else {
+                    await ContentMapping.create({
+                        postId: updatedPost._id,
+                        postUserId: updatedPost.userId,
+                        blackCoinGiver: blackCoinGiverId,
+                        reason: updatedPost.tedBlackCoinData.reason,
+                        hashTags: updatedPost.tedBlackCoinData.hashTags,
+                        tedBlackCoinData: updatedPost.tedBlackCoinData,
+                        status: 'pending'
+                    });
                 }
 
                 await tedBlackRecord.save();
@@ -4856,6 +4868,104 @@ exports.giveTedBlackCoin = async (req, res) => {
         });
     }
 };
+
+exports.getAllPendingBlackCoins = async (req, res) => {
+    try {
+        const pending = await ContentMapping.find({ status: 'pending' })
+            .populate('postId')
+            .populate('postUserId')
+            .populate('blackCoinGiver');
+        return res.status(200).json({ success: true, data: pending });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Error fetching pending black coins', error: error.message });
+    }
+};
+
+exports.approveOrRejectBlackCoin = async (req, res) => {
+    try {
+        const { mappingId, action } = req.body; // action: 'approve' or 'reject'
+        const ContentMapping = require('../models/contentMapping');
+        const mapping = await ContentMapping.findById(mappingId);
+        if (!mapping) return res.status(404).json({ success: false, message: 'Mapping not found' });
+
+        if (action === 'approve') {
+            mapping.status = 'approved';
+
+            // --- Begin calculation logic (same as agreePercentage >= 75) ---
+            const updatedPost = await Postcreate.findById(mapping.postId);
+            const postCreator = await User.findById(mapping.postUserId);
+            const blackCoinGiverId = mapping.blackCoinGiver.toString();
+
+            // Remove blackCoinGiver from other tiers
+            const updatedTiers = [
+                { arr: "tedGoldGivers", cnt: "tedGoldCount", wallet: "tedGold" },
+                { arr: "tedSilverGivers", cnt: "tedSilverCount", wallet: "tedSilver" },
+                { arr: "tedBronzeGivers", cnt: "tedBronzeCount", wallet: "tedBronze" },
+            ];
+
+            for (const tier of updatedTiers) {
+                if (updatedPost[tier.arr]?.map(String).includes(blackCoinGiverId)) {
+                    updatedPost[tier.arr] = updatedPost[tier.arr].filter(id => id.toString() !== blackCoinGiverId);
+                    updatedPost[tier.cnt] = Math.max((updatedPost[tier.cnt] || 1) - 1, 0);
+                    postCreator.coinWallet[tier.wallet] = Math.max((postCreator.coinWallet[tier.wallet] || 1) - 1, 0);
+                }
+            }
+
+            // Accept TedBlack
+            updatedPost.tedBlackGivers = updatedPost.tedBlackGivers || [];
+            if (!updatedPost.tedBlackGivers.map(String).includes(blackCoinGiverId)) {
+                updatedPost.tedBlackGivers.push(mapping.blackCoinGiver);
+            }
+            updatedPost.tedBlackCount = (updatedPost.tedBlackCount || 0) + 1;
+
+            // Recalculate coin wallet counts by summing across all posts of the owner
+            const allPosts = await Postcreate.find({ userId: postCreator._id });
+
+            let tg = 0, ts = 0, tb = 0, tblk = 0;
+            allPosts.forEach(p => {
+                tg += p.tedGoldCount || 0;
+                ts += p.tedSilverCount || 0;
+                tb += p.tedBronzeCount || 0;
+                tblk += p.tedBlackCount || 0;
+            });
+
+            postCreator.coinWallet.tedGold = tg;
+            postCreator.coinWallet.tedSilver = ts;
+            postCreator.coinWallet.tedBronze = tb;
+            postCreator.coinWallet.tedBlack = tblk;
+
+            const goldUnit = Math.floor(tg / 75);
+            const silverUnit = Math.floor(ts / 50);
+            const bronzeUnit = Math.floor(tb / 25);
+            postCreator.coinWallet.totalTedCoin = Math.min(goldUnit, silverUnit, bronzeUnit);
+
+            await postCreator.save();
+            await updatedPost.save();
+            // --- End calculation logic ---
+        } else if (action === 'reject') {
+            mapping.status = 'rejected';
+
+            // Also update TedBlackers record if it exists
+            const tedBlackRecord = await TedBlackers.findOne({
+                postUserId: mapping.postUserId,
+                userPostId: mapping.postId,
+                reasone: mapping.reason
+            });
+            if (tedBlackRecord) {
+                tedBlackRecord.status = "Reject TedBlack";
+                await tedBlackRecord.save();
+            }
+            // Optionally, handle reject logic
+        } else {
+            return res.status(400).json({ success: false, message: 'Invalid action' });
+        }
+        await mapping.save();
+        return res.status(200).json({ success: true, message: `Black coin ${action}d successfully` });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Error updating black coin status', error: error.message });
+    }
+};
+
 // exports.giveTedBlackCoin = async (req, res) => {
 //     try {
 //         const authorizedUserId = req.user.userId;

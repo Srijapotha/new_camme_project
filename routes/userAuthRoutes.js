@@ -84,6 +84,8 @@ const {
   markMsgAsRead,
   getShareablePostUrl,
   toggleSavePost,
+  getAllPendingBlackCoins,
+  approveOrRejectBlackCoin,
 } = require("../controllers/userAuthController")
 const { authMiddelWere } = require('../middelwere/authMiddelWere');
 const { uploadd } = require("../middelwere/multer");
@@ -4992,6 +4994,71 @@ router.put('/reports/:id', authMiddelWere, resolveReport);
  *         description: Internal server error.
  */
 router.get('/qrCode', authMiddelWere, getInstagramQrCode);
+
+/**
+ * @swagger
+ * /api/v1/user/getAllPendingBlackCoins:
+ *   get:
+ *     summary: Get all pending black coin votes for manual review
+ *     tags:
+ *       - Black Coin Moderation
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of all pending black coin votes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/ContentMapping'
+ */
+router.get('/getAllPendingBlackCoins', authMiddelWere, getAllPendingBlackCoins);
+
+
+/**
+ * @swagger
+ * /api/v1/user/approveOrRejectBlackCoin:
+ *   post:
+ *     summary: Approve or reject a pending black coin vote
+ *     tags:
+ *       - Black Coin Moderation
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               mappingId:
+ *                 type: string
+ *                 description: The ContentMapping document ID
+ *               action:
+ *                 type: string
+ *                 enum: [approve, reject]
+ *                 description: Approve or reject the black coin
+ *     responses:
+ *       200:
+ *         description: Black coin moderation result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ */
+router.post('/approveOrRejectBlackCoin', authMiddelWere, approveOrRejectBlackCoin);
 
 
 
