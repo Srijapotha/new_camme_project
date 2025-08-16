@@ -4605,7 +4605,7 @@ router.post("/FetchPhotoGraphyForHome",authMiddelWere,FetchPhotoGraphyForHome)
 
 /**
  * @swagger
- * /user/{postId}/comments:
+ * /user/comments:
  *   post:
  *     summary: Add a new comment to a post
  *     description: Creates a new comment for a specific post. The user is identified by the authentication token.
@@ -4613,13 +4613,6 @@ router.post("/FetchPhotoGraphyForHome",authMiddelWere,FetchPhotoGraphyForHome)
  *       - Comments
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: postId
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the post to comment on.
  *     requestBody:
  *       required: true
  *       content:
@@ -4627,8 +4620,13 @@ router.post("/FetchPhotoGraphyForHome",authMiddelWere,FetchPhotoGraphyForHome)
  *           schema:
  *             type: object
  *             required:
+ *               - postId
  *               - text
  *             properties:
+ *               postId:
+ *                 type: string
+ *                 example: "abc123"
+ *                 description: The ID of the post to comment on.
  *               text:
  *                 type: string
  *                 example: This is a great post!
@@ -4653,11 +4651,11 @@ router.post("/FetchPhotoGraphyForHome",authMiddelWere,FetchPhotoGraphyForHome)
  *       500:
  *         description: Internal server error.
  */
-router.post('/:postId/comments', authMiddelWere, addComment);
+router.post('/comments', authMiddelWere, addComment);
 
 /**
  * @swagger
- * /user/{commentId}/replies:
+ * /user/replies:
  *   post:
  *     summary: Add a reply to a comment
  *     description: Adds a new reply to an existing comment. The user is identified by the authentication token.
@@ -4665,13 +4663,6 @@ router.post('/:postId/comments', authMiddelWere, addComment);
  *       - Comments
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: commentId
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the comment to reply to.
  *     requestBody:
  *       required: true
  *       content:
@@ -4679,8 +4670,13 @@ router.post('/:postId/comments', authMiddelWere, addComment);
  *           schema:
  *             type: object
  *             required:
+ *               - commentId
  *               - text
  *             properties:
+ *               commentId:
+ *                 type: string
+ *                 example: "xyz789"
+ *                 description: The ID of the comment to reply to.
  *               text:
  *                 type: string
  *                 example: I agree with this comment.
@@ -4705,35 +4701,40 @@ router.post('/:postId/comments', authMiddelWere, addComment);
  *       500:
  *         description: Internal server error.
  */
-
-router.post('/:commentId/replies', authMiddelWere, addReply);
+router.post('/replies', authMiddelWere, addReply);
 
 /**
  * @swagger
- * /user/{postId}/comments:
- *    get:
- *      summary: Get all comments for a specific post
- *      description: Retrieves a list of all top-level comments for a given post.
- *      tags:
- *        - Comments
- *      security:
- *        - bearerAuth: []
- *      parameters:
- *        - in: path
- *          name: postId
- *          required: true
- *          schema:
- *          type: string
- *          description: The ID of the post to retrieve comments for.
- *      responses:
- *        200:
- *          description: A list of comments for the post.
- *        404:
- *          description: Post not found.
- *        500:
- *          description: Internal server error.
+ * /user/comments:
+ *   post:
+ *     summary: Get all comments for a specific post
+ *     description: Retrieves a list of all top-level comments for a given post.
+ *     tags:
+ *       - Comments
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - postId
+ *             properties:
+ *               postId:
+ *                 type: string
+ *                 example: "abc123"
+ *                 description: The ID of the post to retrieve comments for.
+ *     responses:
+ *       200:
+ *         description: A list of comments for the post.
+ *       404:
+ *         description: Post not found.
+ *       500:
+ *         description: Internal server error.
  */
-router.get('/:postId/comments', authMiddelWere, getComments);
+router.post('/getComments', authMiddelWere, getComments);
 
 /**
  * @swagger
@@ -4777,21 +4778,27 @@ router.put('/:commentId/like', authMiddelWere, likeComment);
 
 /**
  * @swagger
- * /user/{postId}/share-url:
- *   get:
+ * /user/share-url:
+ *   post:
  *     summary: Generate shareable URL for a post
  *     description: Returns a public URL that can be shared for viewing the post.
  *     tags:
  *       - Posts
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: postId
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the post to generate a shareable URL for.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - postId
+ *             properties:
+ *               postId:
+ *                 type: string
+ *                 example: "abc123"
+ *                 description: The ID of the post to generate a shareable URL for.
  *     responses:
  *       200:
  *         description: Shareable URL generated successfully.
@@ -4814,11 +4821,11 @@ router.put('/:commentId/like', authMiddelWere, likeComment);
  *       500:
  *         description: Internal server error.
  */
-router.get('/:postId/share-url', authMiddelWere, getShareablePostUrl);
+router.post('/share-url', authMiddelWere, getShareablePostUrl);
 
 /**
  * @swagger
- * /user/{postId}/save:
+ * /user/save:
  *   put:
  *     summary: Save or unsave a post
  *     description: Allows a user to save a post for later viewing or remove it from saved posts.
@@ -4826,13 +4833,19 @@ router.get('/:postId/share-url', authMiddelWere, getShareablePostUrl);
  *       - Posts
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: postId
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the post to save or unsave.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - postId
+ *             properties:
+ *               postId:
+ *                 type: string
+ *                 example: "abc123"
+ *                 description: The ID of the post to save or unsave.
  *     responses:
  *       200:
  *         description: Post saved/unsaved successfully.
@@ -4852,7 +4865,7 @@ router.get('/:postId/share-url', authMiddelWere, getShareablePostUrl);
  *       500:
  *         description: Internal server error.
  */
-router.put('/:postId/save', authMiddelWere, toggleSavePost);
+router.put('/save', authMiddelWere, toggleSavePost);
 
 /**
  * @swagger
@@ -4923,7 +4936,7 @@ router.get('/reports/pending', authMiddelWere, getPendingReports);
 
 /**
  * @swagger
- * /user/reports/{id}:
+ * /user/reports:
  *   put:
  *     summary: Update report status
  *     description: Allows an admin to update the status of a report.
@@ -4931,20 +4944,20 @@ router.get('/reports/pending', authMiddelWere, getPendingReports);
  *       - Reports
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: ID of the report to update.
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - id
+ *               - status
  *             properties:
+ *               id:
+ *                 type: string
+ *                 example: "report123"
+ *                 description: ID of the report to update.
  *               status:
  *                 type: string
  *                 enum: [pending, under_review, resolved, dismissed]
@@ -4957,7 +4970,7 @@ router.get('/reports/pending', authMiddelWere, getPendingReports);
  *       500:
  *         description: Internal server error.
  */
-router.put('/reports/:id', authMiddelWere, resolveReport);
+router.put('/reports', authMiddelWere, resolveReport);
 
 /**
  * @swagger

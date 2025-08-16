@@ -6988,7 +6988,7 @@ exports.getShareablePostUrl = async (req, res) => {
 
 exports.toggleSavePost = async (req, res) => {
   try {
-    const { postId } = req.params;
+    const { postId } = req.body;
     const userId = req.user.userId;
 
     const post = await Postcreate.findById(postId);

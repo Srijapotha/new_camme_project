@@ -43,8 +43,8 @@ exports.getPendingReports = async (req, res) => {
 
 exports.resolveReport = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { status, takeActionOnContent = false } = req.body; // 'dismiss' or 'resolve'
+    // const { id } = req.params;
+    const { status, takeActionOnContent = false, id } = req.body; // 'dismiss' or 'resolve'
 
     const report = await Report.findById(id);
     if (!report) {

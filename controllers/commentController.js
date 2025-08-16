@@ -4,8 +4,8 @@ const Post = require('../models/PostModel'); // Assuming you have a Post model
 
 exports.addComment = async (req, res) => {
     try {
-        const { postId } = req.params;
-        const { text } = req.body;
+        // const { postId } = req.params;
+        const { text, postId } = req.body;
         const postedBy = req.user.userId ; 
 
         const post = await Post.findById(postId);
@@ -35,8 +35,8 @@ exports.addComment = async (req, res) => {
 
 exports.addReply = async (req, res) => {
     try {
-        const { commentId } = req.params;
-        const { text } = req.body;
+        // const { commentId } = req.params;
+        const { text, commentId } = req.body;
         const postedBy = req.user.userId;
 
         const parentComment = await Comment.findById(commentId);
@@ -66,7 +66,8 @@ exports.addReply = async (req, res) => {
 
 exports.getComments = async (req, res) => {
     try {
-        const { postId } = req.params;
+        // const { postId } = req.params;
+        const { postId } = req.body;
 
         const comments = await Comment.find({ post: postId, parentComment: null })
             .populate('postedBy', 'username profilePic') // Populate user details
