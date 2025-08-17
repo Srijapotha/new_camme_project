@@ -2297,7 +2297,7 @@ router.post("/getAuthorizedUserPost", authMiddleware, getAuthorizedUserPost);
  *   post:
  *     summary: Add a comment to a post after verifying token and email
  *     tags:
- *       - Posts
+ *       - Comments
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -2385,7 +2385,7 @@ router.post("/giveCommentToPost", authMiddleware, giveCommentToPost);
  *   post:
  *     summary: Reply to a comment on a post after verifying token and email
  *     tags:
- *       - Posts
+ *       - Comments
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -2463,7 +2463,7 @@ router.post("/giveReplayToCommentPost", authMiddleware, giveReplayToCommentPost)
  *   post:
  *     summary: Get all comments and replies for a post
  *     tags:
- *       - Posts
+ *       - Comments
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -2479,6 +2479,14 @@ router.post("/giveReplayToCommentPost", authMiddleware, giveReplayToCommentPost)
  *               postId:
  *                 type: string
  *                 example: 6644920a4ad4cc66aaae6131
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       200:
  *         description: Comments and replies fetched successfully
@@ -4750,178 +4758,7 @@ router.post("/FetchPhotoGraphyForHome",authMiddleware,FetchPhotoGraphyForHome)
 // router.post("/handelApporachVote",authMiddleware,handelApporachVote)
 
 
-/**
- * @swagger
- * /user/comments:
- *   post:
- *     summary: Add a new comment to a post
- *     description: Creates a new comment for a specific post. The user is identified by the authentication token.
- *     tags:
- *       - Comments
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - postId
- *               - text
- *             properties:
- *               postId:
- *                 type: string
- *                 example: "abc123"
- *                 description: The ID of the post to comment on.
- *               text:
- *                 type: string
- *                 example: This is a great post!
- *     responses:
- *       200:
- *         description: Comment added successfully.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Comment added successfully.
- *       401:
- *         description: Unauthorized. Invalid or missing token.
- *       404:
- *         description: Post not found.
- *       500:
- *         description: Internal server error.
- */
-router.post('/comments', authMiddleware, addComment);
 
-/**
- * @swagger
- * /user/replies:
- *   post:
- *     summary: Add a reply to a comment
- *     description: Adds a new reply to an existing comment. The user is identified by the authentication token.
- *     tags:
- *       - Comments
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - commentId
- *               - text
- *             properties:
- *               commentId:
- *                 type: string
- *                 example: "xyz789"
- *                 description: The ID of the comment to reply to.
- *               text:
- *                 type: string
- *                 example: I agree with this comment.
- *     responses:
- *       200:
- *         description: Reply added successfully.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Reply added successfully.
- *       401:
- *         description: Unauthorized. Invalid or missing token.
- *       404:
- *         description: Parent comment not found.
- *       500:
- *         description: Internal server error.
- */
-router.post('/replies', authMiddleware, addReply);
-
-/**
- * @swagger
- * /user/comments:
- *   post:
- *     summary: Get all comments for a specific post
- *     description: Retrieves a list of all top-level comments for a given post.
- *     tags:
- *       - Comments
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - postId
- *             properties:
- *               postId:
- *                 type: string
- *                 example: "abc123"
- *                 description: The ID of the post to retrieve comments for.
- *     responses:
- *       200:
- *         description: A list of comments for the post.
- *       404:
- *         description: Post not found.
- *       500:
- *         description: Internal server error.
- */
-router.post('/getComments', authMiddleware, getComments);
-
-/**
- * @swagger
- * /user/{commentId}/like:
- *   put:
- *     summary: Like or unlike a comment
- *     description: Toggles the like status for a comment by the authenticated user.
- *     tags:
- *       - Comments
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: commentId
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the comment to like or unlike.
- *     responses:
- *       200:
- *         description: Comment liked/unliked successfully.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Comment liked successfully.
- *       401:
- *         description: Unauthorized. Invalid or missing token.
- *       404:
- *         description: Comment not found.
- *       500:
- *         description: Internal server error.
- */
-router.put('/:commentId/like', authMiddleware, likeComment);
 
 /**
  * @swagger
@@ -5063,6 +4900,14 @@ router.put('/save', authMiddleware, toggleSavePost);
  *                 type: string
  *                 enum: [spam, hate_speech, nudity, violence, other]
  *                 description: Reason for reporting.
+*               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       201:
  *         description: Report submitted successfully.
@@ -5083,6 +4928,20 @@ router.post('/reports', authMiddleware, submitReport);
  *       - Reports
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       200:
  *         description: List of pending reports.
@@ -5095,7 +4954,7 @@ router.post('/reports', authMiddleware, submitReport);
  *       500:
  *         description: Internal server error.
  */
-router.get('/reports/pending', authMiddleware, getPendingReports);
+router.post('/reports/pending', authMiddleware, getPendingReports);
 
 /**
  * @swagger
@@ -5125,6 +4984,14 @@ router.get('/reports/pending', authMiddleware, getPendingReports);
  *                 type: string
  *                 enum: [pending, under_review, resolved, dismissed]
  *                 description: New status of the report.
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       200:
  *         description: Report updated successfully.
@@ -5187,13 +5054,27 @@ router.post('/qrCode', authMiddleware, getInstagramQrCode);
 
 /**
  * @swagger
- * /api/v1/user/getAllPendingBlackCoins:
- *   get:
+ * /user/getAllPendingBlackCoins:
+ *   post:
  *     summary: Get all pending black coin votes for manual review
  *     tags:
  *       - Black Coin Moderation
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       200:
  *         description: List of all pending black coin votes
@@ -5209,12 +5090,12 @@ router.post('/qrCode', authMiddleware, getInstagramQrCode);
  *                   items:
  *                     $ref: '#/components/schemas/ContentMapping'
  */
-router.get('/getAllPendingBlackCoins', authMiddleware, getAllPendingBlackCoins);
+router.post('/getAllPendingBlackCoins', authMiddleware, getAllPendingBlackCoins);
 
 
 /**
  * @swagger
- * /api/v1/user/approveOrRejectBlackCoin:
+ * /user/approveOrRejectBlackCoin:
  *   post:
  *     summary: Approve or reject a pending black coin vote
  *     tags:
@@ -5235,6 +5116,13 @@ router.get('/getAllPendingBlackCoins', authMiddleware, getAllPendingBlackCoins);
  *                 type: string
  *                 enum: [approve, reject]
  *                 description: Approve or reject the black coin
+ *               email:
+ *                 type: string
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       200:
  *         description: Black coin moderation result
