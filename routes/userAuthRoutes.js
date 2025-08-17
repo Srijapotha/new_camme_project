@@ -4946,6 +4946,14 @@ router.put('/:commentId/like', authMiddleware, likeComment);
  *                 type: string
  *                 example: "abc123"
  *                 description: The ID of the post to generate a shareable URL for.
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       200:
  *         description: Shareable URL generated successfully.
@@ -4993,6 +5001,14 @@ router.post('/share-url', authMiddleware, getShareablePostUrl);
  *                 type: string
  *                 example: "abc123"
  *                 description: The ID of the post to save or unsave.
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       200:
  *         description: Post saved/unsaved successfully.
@@ -5142,6 +5158,14 @@ router.put('/reports', authMiddleware, resolveReport);
  *               userId:
  *                 type: string
  *                 example: 6644920a4ad4cc66aaae6131
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       200:
  *         description: QR code generated successfully.
