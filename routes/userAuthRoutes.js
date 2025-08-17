@@ -86,10 +86,12 @@ const {
   toggleSavePost,
   getAllPendingBlackCoins,
   approveOrRejectBlackCoin,
+  giveReplayToCommentPost,
+  getAllCommentsAndReplies,
 } = require("../controllers/userAuthController")
-const { authMiddelWere } = require('../middelwere/authMiddelWere');
-const { uploadd } = require("../middelwere/multer");
-const checkBlacklist = require('../middelwere/BlackListToken');
+const { authMiddleware } = require('../middleware/authMiddleware');
+const { uploadd } = require("../middleware/multer");
+const checkBlacklist = require('../middleware/BlackListToken');
 const { upload } = require("../config/cloudinary");
 const { addComment, addReply, getComments, likeComment } = require('../controllers/commentController');
 const {submitReport, getPendingReports, resolveReport} = require('../controllers/reportController');
@@ -666,7 +668,7 @@ router.post("/reset-password", resetPassword);
  *       500:
  *         description: Error in addAccount controller
  */
-router.post("/addAccount", authMiddelWere, addAccount)
+router.post("/addAccount", authMiddleware, addAccount)
 router.get("/account-link/approve/:userId/:requesterId", approveLinkAccount);
 router.post("/account-link/verify-otp", finalizeLinkAccount);
 router.post("/account-link/reject/:userId/:requesterId", rejectLinkAccount);
@@ -719,7 +721,7 @@ router.post("/account-link/reject/:userId/:requesterId", rejectLinkAccount);
  *       500:
  *         description: Internal server error
  */
-router.post("/logout",checkBlacklist,authMiddelWere, logoutUser);
+router.post("/logout",checkBlacklist,authMiddleware, logoutUser);
 /**
  * @swagger
  * /user/getMatchIntrested:
@@ -789,7 +791,7 @@ router.post("/logout",checkBlacklist,authMiddelWere, logoutUser);
  *                 message:
  *                   type: string
  */
-router.post("/getMatchIntrested",authMiddelWere, getMatchedIntrested);
+router.post("/getMatchIntrested",authMiddleware, getMatchedIntrested);
 /**
  * @swagger
  * /user/getHashTagContent:
@@ -859,7 +861,7 @@ router.post("/getMatchIntrested",authMiddelWere, getMatchedIntrested);
  *                 message:
  *                   type: string
  */
-router.post("/getHashTagContent",authMiddelWere, getHashTagContent);
+router.post("/getHashTagContent",authMiddleware, getHashTagContent);
 /**
  * @swagger
  * /user/getLocation:
@@ -907,7 +909,7 @@ router.post("/getHashTagContent",authMiddelWere, getHashTagContent);
  *       500:
  *         description: Server error in getAllowLocation
  */
-router.post("/getLocation",authMiddelWere, getAllowLocation);
+router.post("/getLocation",authMiddleware, getAllowLocation);
 /**
  * @swagger
  * /user/getAll_Matches_OnBasisOf_Intrest_HashTag_Location:
@@ -969,7 +971,7 @@ router.post("/getLocation",authMiddelWere, getAllowLocation);
  *       500:
  *         description: Server error occurred
  */
-router.post("/getAll_Matches_OnBasisOf_Intrest_HashTag_Location",authMiddelWere,getAll_Matches_OnBasisOf_Intrest_HashTag_Location)
+router.post("/getAll_Matches_OnBasisOf_Intrest_HashTag_Location",authMiddleware,getAll_Matches_OnBasisOf_Intrest_HashTag_Location)
 /**
  * @swagger
  * /user/createpost:
@@ -1030,7 +1032,7 @@ router.post("/getAll_Matches_OnBasisOf_Intrest_HashTag_Location",authMiddelWere,
  *         description: Server Error
  */
 
-router.post("/createpost", authMiddelWere, upload.array("files", 10), createPost);
+router.post("/createpost", authMiddleware, upload.array("files", 10), createPost);
 // /**
 //  * @swagger
 //  * /user/share/{postId}/{friendId}:
@@ -1113,8 +1115,8 @@ router.post("/createpost", authMiddelWere, upload.array("files", 10), createPost
 //  *                   type: string
 //  *                   example: Internal Server Error
 //  */
-router.post('/share/:postId/:friendId', authMiddelWere, sharePostWithFriend);
-router.post("/reportPost/:postId", authMiddelWere, report);
+router.post('/share/:postId/:friendId', authMiddleware, sharePostWithFriend);
+router.post("/reportPost/:postId", authMiddleware, report);
 /**
  * @swagger
  * /user/moments:
@@ -1180,7 +1182,7 @@ router.post("/reportPost/:postId", authMiddelWere, report);
  */
 
 
-router.post("/moments", authMiddelWere, upload.array('image', 10), createMoment);
+router.post("/moments", authMiddleware, upload.array('image', 10), createMoment);
 /**
  * @swagger
  * /user/friends:
@@ -1226,7 +1228,7 @@ router.post("/moments", authMiddelWere, upload.array('image', 10), createMoment)
  *         description: Internal server error
  */
 
-router.get('/friends', authMiddelWere, getAllFriends);
+router.get('/friends', authMiddleware, getAllFriends);
 
 
 /**
@@ -1371,7 +1373,7 @@ router.post("/resendOtp", resendOtp)
  *       500:
  *         description: Server error
  */
-router.post("/getYourMoment", authMiddelWere, getYourMoment);
+router.post("/getYourMoment", authMiddleware, getYourMoment);
 /**
  * @swagger
  * /user/getallmomets:
@@ -1447,7 +1449,7 @@ router.post("/getYourMoment", authMiddelWere, getYourMoment);
  *       500:
  *         description: Server error
  */
-router.post("/getallmomets", authMiddelWere, getAllMoments);
+router.post("/getallmomets", authMiddleware, getAllMoments);
 /**
  * @swagger
  * /user/viewMoment:
@@ -1531,7 +1533,7 @@ router.post("/getallmomets", authMiddelWere, getAllMoments);
  *                 message:
  *                   type: string
  */
-router.post("/viewMoment", authMiddelWere, viewAMoment);
+router.post("/viewMoment", authMiddleware, viewAMoment);
 /**
  * @swagger
  * /user/authorizedUserMomentsViewersCount:
@@ -1620,7 +1622,7 @@ router.post("/viewMoment", authMiddelWere, viewAMoment);
  *                 message:
  *                   type: string
  */
-router.post("/authorizedUserMomentsViewersCount", authMiddelWere, authorizedUserMomentsViewersCount);
+router.post("/authorizedUserMomentsViewersCount", authMiddleware, authorizedUserMomentsViewersCount);
 /**
  * @swagger
  * /user/authorizedUserMomentsViewers:
@@ -1717,7 +1719,7 @@ router.post("/authorizedUserMomentsViewersCount", authMiddelWere, authorizedUser
  *                 message:
  *                   type: string
  */
-router.post("/authorizedUserMomentsViewers", authMiddelWere, authorizedUserMomentsViewers);
+router.post("/authorizedUserMomentsViewers", authMiddleware, authorizedUserMomentsViewers);
 /**
  * @swagger
  * /user/deleteMoment:
@@ -1781,7 +1783,7 @@ router.post("/authorizedUserMomentsViewers", authMiddelWere, authorizedUserMomen
  *                   type: string
  *                   example: Server error in deleteMoment
  */
-router.delete("/deleteMoment", authMiddelWere, deleteMoment)
+router.delete("/deleteMoment", authMiddleware, deleteMoment)
 /**
  * @swagger
  * /user/giveCommentToAnMomemt:
@@ -1861,7 +1863,7 @@ router.delete("/deleteMoment", authMiddelWere, deleteMoment)
  *                   type: string
  *                   example: Server error in giveCommentToAMomemt
  */
-router.post("/giveCommentToAnMomemt", authMiddelWere, giveCommentToAnMomemt);
+router.post("/giveCommentToAnMomemt", authMiddleware, giveCommentToAnMomemt);
 /**
  * @swagger
  * /user/replyToMomontComment:
@@ -1936,7 +1938,7 @@ router.post("/giveCommentToAnMomemt", authMiddelWere, giveCommentToAnMomemt);
  *                   type: string
  *                   example: Server error while replying to comment.
  */
-router.post("/replyToMomontComment", authMiddelWere, replyToMomontComment)
+router.post("/replyToMomontComment", authMiddleware, replyToMomontComment)
 /**
  * @swagger
  * /user/getAllCommentsWithReplies:
@@ -2018,7 +2020,7 @@ router.post("/replyToMomontComment", authMiddelWere, replyToMomontComment)
  *                   type: string
  *                   example: Server error while fetching comments and replies
  */
-router.post("/getAllCommentsWithReplies", authMiddelWere, getAllCommentsWithReplies)
+router.post("/getAllCommentsWithReplies", authMiddleware, getAllCommentsWithReplies)
 /**
  * @swagger
  * /user/getAllPost:
@@ -2114,7 +2116,7 @@ router.post("/getAllCommentsWithReplies", authMiddelWere, getAllCommentsWithRepl
  *       500:
  *         description: Server error
  */
-router.post("/getAllPost", authMiddelWere, getAllPost);
+router.post("/getAllPost", authMiddleware, getAllPost);
 /**
  * @swagger
  * /user/getSinglePost:
@@ -2206,7 +2208,7 @@ router.post("/getAllPost", authMiddelWere, getAllPost);
  *                   type: string
  *                   example: Server error while fetching single post
  */
-router.post("/getSinglePost", authMiddelWere, getSinglePost)
+router.post("/getSinglePost", authMiddleware, getSinglePost)
 /**
  * @swagger
  * /user/getAuthorizedUserPost:
@@ -2288,7 +2290,7 @@ router.post("/getSinglePost", authMiddelWere, getSinglePost)
  *       500:
  *         description: Server error while fetching posts
  */
-router.post("/getAuthorizedUserPost", authMiddelWere, getAuthorizedUserPost);
+router.post("/getAuthorizedUserPost", authMiddleware, getAuthorizedUserPost);
 /**
  * @swagger
  * /user/giveCommentToPost:
@@ -2375,7 +2377,152 @@ router.post("/getAuthorizedUserPost", authMiddelWere, getAuthorizedUserPost);
  *                   type: string
  *                   example: server error while adding comment to post
  */
-router.post("/giveCommentToPost", authMiddelWere, giveCommentToPost)
+router.post("/giveCommentToPost", authMiddleware, giveCommentToPost);
+
+/**
+ * @swagger
+ * /user/giveReplayToCommentPost:
+ *   post:
+ *     summary: Reply to a comment on a post after verifying token and email
+ *     tags:
+ *       - Posts
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       description: Reply details with postId, commentId, email, and token
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - postId
+ *               - commentId
+ *               - reply
+ *               - email
+ *               - token
+ *             properties:
+ *               postId:
+ *                 type: string
+ *                 example: 6644920a4ad4cc66aaae6131
+ *               commentId:
+ *                 type: string
+ *                 example: 6644920a4ad4cc66aaae6132
+ *               reply:
+ *                 type: string
+ *                 example: Thanks for your feedback!
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *     responses:
+ *       200:
+ *         description: Reply added successfully or validation error message
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - type: object
+ *                   properties:
+ *                     sucess:
+ *                       type: boolean
+ *                       example: true
+ *                     message:
+ *                       type: string
+ *                       example: Reply Give SucessFully to an Post
+ *                 - type: object
+ *                   properties:
+ *                     sucess:
+ *                       type: boolean
+ *                       example: false
+ *                     message:
+ *                       type: string
+ *                       example: Provided token does not match authorized token
+ *       500:
+ *         description: Server error while replying to comment
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 sucess:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Server Error while Give ReplayTo an Posts
+ */
+router.post("/giveReplayToCommentPost", authMiddleware, giveReplayToCommentPost);
+
+/**
+ * @swagger
+ * /user/getAllCommentsAndReplies:
+ *   post:
+ *     summary: Get all comments and replies for a post
+ *     tags:
+ *       - Posts
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       description: Post ID to fetch comments and replies
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - postId
+ *             properties:
+ *               postId:
+ *                 type: string
+ *                 example: 6644920a4ad4cc66aaae6131
+ *     responses:
+ *       200:
+ *         description: Comments and replies fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Comments and replies fetched successfully
+ *                 comments:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       userId:
+ *                         type: string
+ *                       comment:
+ *                         type: string
+ *                       replies:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             userId:
+ *                               type: string
+ *                             reply:
+ *                               type: string
+ *                             createdAt:
+ *                               type: string
+ *                               format: date-time
+ *       400:
+ *         description: Missing postId
+ *       404:
+ *         description: Post not found
+ *       500:
+ *         description: Server error
+ */
+router.post("/getAllCommentsAndReplies", authMiddleware, getAllCommentsAndReplies);
+
 /**
  * @swagger
  * /user/giveTedGoldcoin:
@@ -2450,7 +2597,7 @@ router.post("/giveCommentToPost", authMiddelWere, giveCommentToPost)
  *                   type: string
  *                   example: Internal Server Error in giveTedGoldToPost
  */
-router.post("/giveTedGoldcoin",authMiddelWere, giveTedGoldToPost);
+router.post("/giveTedGoldcoin",authMiddleware, giveTedGoldToPost);
 /**
  * @swagger
  * /user/giveTedSilvercoin:
@@ -2525,7 +2672,7 @@ router.post("/giveTedGoldcoin",authMiddelWere, giveTedGoldToPost);
  *                   type: string
  *                   example: error in giveTedSilverPost controller
  */
-router.post("/giveTedSilvercoin", authMiddelWere, giveTedSilverPost);
+router.post("/giveTedSilvercoin", authMiddleware, giveTedSilverPost);
 /**
  * @swagger
  * /user/giveTedBronzeCoin:
@@ -2585,7 +2732,7 @@ router.post("/giveTedSilvercoin", authMiddelWere, giveTedSilverPost);
  *                   type: string
  */
 
-router.post("/giveTedBronzeCoin", authMiddelWere, giveTedBronzePost);
+router.post("/giveTedBronzeCoin", authMiddleware, giveTedBronzePost);
 /**
  * @swagger
  * /user/getAuthorizedUserPhotoGraphy:
@@ -2664,7 +2811,7 @@ router.post("/giveTedBronzeCoin", authMiddelWere, giveTedBronzePost);
  */
 router.post(
   "/getAuthorizedUserPhotoGraphy",
-  authMiddelWere,
+  authMiddleware,
   getAuthorizedUserPhotoGraphy
 );
 
@@ -2727,7 +2874,7 @@ router.post(
  *       500:
  *         description: Server error.
  */
-router.post("/givetedBlackCoin", authMiddelWere, giveTedBlackCoin);
+router.post("/givetedBlackCoin", authMiddleware, giveTedBlackCoin);
 // /**
 //  * @swagger
 //  * /user/voteTedBlackCoin:
@@ -2794,7 +2941,7 @@ router.post("/givetedBlackCoin", authMiddelWere, giveTedBlackCoin);
 //  *                   type: string
 //  *                   example: "Server error while voting"
 //  */
-router.post("/voteTedBlackCoin",authMiddelWere,voteTedBlackCoin)
+router.post("/voteTedBlackCoin",authMiddleware,voteTedBlackCoin)
 
 /**
  * @swagger
@@ -2873,7 +3020,7 @@ router.post("/voteTedBlackCoin",authMiddelWere,voteTedBlackCoin)
  *                   type: string
  *                   example: Error in inviteAFriend Route
  */
-router.post("/inviteAFriend",authMiddelWere,sendFriendRequest);
+router.post("/inviteAFriend",authMiddleware,sendFriendRequest);
 /**
  * @swagger
  * /user/cancleMyRequest:
@@ -2927,7 +3074,7 @@ router.post("/inviteAFriend",authMiddelWere,sendFriendRequest);
  *                 message:
  *                   type: string
  */
-router.post("/cancleMyRequest",authMiddelWere,cancleMyRequest);
+router.post("/cancleMyRequest",authMiddleware,cancleMyRequest);
 /**
  * @swagger
  * /user/fetchAllRecentUserAllFriends:
@@ -2997,7 +3144,7 @@ router.post("/cancleMyRequest",authMiddelWere,cancleMyRequest);
  *                 message:
  *                   type: string
  */
-router.post("/fetchAllRecentUserAllFriends",authMiddelWere,fetchAllRecentUserAllFriends);
+router.post("/fetchAllRecentUserAllFriends",authMiddleware,fetchAllRecentUserAllFriends);
 /**
  * @swagger
  * /user/fetchAllRecentCancleRequest:
@@ -3067,7 +3214,7 @@ router.post("/fetchAllRecentUserAllFriends",authMiddelWere,fetchAllRecentUserAll
  *                 message:
  *                   type: string
  */
-router.post("/fetchAllRecentCancleRequest",authMiddelWere,fetchAllRecentCancleRequest)
+router.post("/fetchAllRecentCancleRequest",authMiddleware,fetchAllRecentCancleRequest)
 /**
  * @swagger
  * user/acceptFriendRequest:
@@ -3145,7 +3292,7 @@ router.post("/fetchAllRecentCancleRequest",authMiddelWere,fetchAllRecentCancleRe
  *                   type: string
  *                   example: Error in acceptRequest controller
  */
-router.post("/acceptFriendRequest",authMiddelWere, acceptFriendRequest);
+router.post("/acceptFriendRequest",authMiddleware, acceptFriendRequest);
 /**
  * @swagger
  * /user/rejectFriendRequest:
@@ -3211,7 +3358,7 @@ router.post("/acceptFriendRequest",authMiddelWere, acceptFriendRequest);
  *                 message:
  *                   type: string
  */
-router.post("/rejectFriendRequest",authMiddelWere,rejectFriendRequest)
+router.post("/rejectFriendRequest",authMiddleware,rejectFriendRequest)
 /**
  * @swagger
  * /user/requestedme:
@@ -3278,7 +3425,7 @@ router.post("/rejectFriendRequest",authMiddelWere,rejectFriendRequest)
  *                 message:
  *                   type: string
  */
-router.post("/requestedme",authMiddelWere,requestedme);
+router.post("/requestedme",authMiddleware,requestedme);
 /**
  * @swagger
  * /user/IrequEst:
@@ -3345,7 +3492,7 @@ router.post("/requestedme",authMiddelWere,requestedme);
  *                 message:
  *                   type: string
  */
-router.post("/IrequEst",authMiddelWere,IrequEst)
+router.post("/IrequEst",authMiddleware,IrequEst)
 /**
  * @swagger
  * /user/unFriend:
@@ -3401,7 +3548,7 @@ router.post("/IrequEst",authMiddelWere,IrequEst)
  *       500:
  *         description: Internal server error
  */
-router.post("/unFriend",authMiddelWere,unFriend)
+router.post("/unFriend",authMiddleware,unFriend)
 /**
  * @swagger
  * /user/makeAfriend:
@@ -3456,7 +3603,7 @@ router.post("/unFriend",authMiddelWere,unFriend)
  *       500:
  *         description: Internal server error
  */
-router.post("/makeAfriend",authMiddelWere,makeAfriend)
+router.post("/makeAfriend",authMiddleware,makeAfriend)
 
 /**
  * @swagger
@@ -3528,7 +3675,7 @@ router.post("/makeAfriend",authMiddelWere,makeAfriend)
  *       500:
  *         description: Server error
  */
-router.post("/handleTedBlackCoinVote",authMiddelWere,handleTedBlackCoinVote)
+router.post("/handleTedBlackCoinVote",authMiddleware,handleTedBlackCoinVote)
 
 router.post("/noti",sendNoti)
 
@@ -3607,7 +3754,7 @@ router.post("/noti",sendNoti)
  *       500:
  *         description: Server error while fetching reactions
  */
-router.post("/getBlackCoinReactionsToMyPosts",authMiddelWere,getBlackCoinReactionsToMyPosts);
+router.post("/getBlackCoinReactionsToMyPosts",authMiddleware,getBlackCoinReactionsToMyPosts);
 /**
  * @swagger
  * /user/getBlackCoinReactionsByMe:
@@ -3676,7 +3823,7 @@ router.post("/getBlackCoinReactionsToMyPosts",authMiddelWere,getBlackCoinReactio
  *       500:
  *         description: Server error while fetching reactions
  */
-router.post("/getBlackCoinReactionsByMe", authMiddelWere ,getBlackCoinReactionsByMe);
+router.post("/getBlackCoinReactionsByMe", authMiddleware ,getBlackCoinReactionsByMe);
 /**
  * @swagger
  * /user/getNotiFicationsOnBasisUserId:
@@ -3749,7 +3896,7 @@ router.post("/getBlackCoinReactionsByMe", authMiddelWere ,getBlackCoinReactionsB
  *       500:
  *         description: Internal Server Error
  */
-router.post("/getNotiFicationsOnBasisUserId",authMiddelWere,getNotiFicationsOnBasisUserId);
+router.post("/getNotiFicationsOnBasisUserId",authMiddleware,getNotiFicationsOnBasisUserId);
 /**
  * @swagger
  * /user/getProfileBasedOnUserId:
@@ -3903,7 +4050,7 @@ router.post("/test",TEST)
  *       '500':
  *         description: Server error.
  */
-router.post("/deleteAPost",authMiddelWere,deleteAPost)
+router.post("/deleteAPost",authMiddleware,deleteAPost)
 /**
  * @swagger
  * /user/fetchProfileLocations:
@@ -3967,7 +4114,7 @@ router.post("/deleteAPost",authMiddelWere,deleteAPost)
  *       500:
  *         description: Server Error in FetchProfileLocations
  */
-router.post("/fetchProfileLocations",authMiddelWere,fetchProfileLocations)
+router.post("/fetchProfileLocations",authMiddleware,fetchProfileLocations)
 /**
  * @swagger
  * /user/fetchMapSetting:
@@ -4013,7 +4160,7 @@ router.post("/fetchProfileLocations",authMiddelWere,fetchProfileLocations)
  *       500:
  *         description: Internal Server Error
  */
-router.post("/fetchMapSetting",authMiddelWere,fetchMapSetting)
+router.post("/fetchMapSetting",authMiddleware,fetchMapSetting)
 /**
  * @swagger
  * /user/sendReqinApporach:
@@ -4069,7 +4216,7 @@ router.post("/fetchMapSetting",authMiddelWere,fetchMapSetting)
  *       500:
  *         description: Server Error in make Request
  */
-router.post("/sendReqinApporach",authMiddelWere,sendReqinApporach)
+router.post("/sendReqinApporach",authMiddleware,sendReqinApporach)
 /**
  * @swagger
  * /user/acceptReqApporach:
@@ -4123,7 +4270,7 @@ router.post("/sendReqinApporach",authMiddelWere,sendReqinApporach)
  *       500:
  *         description: Server Error in Accept Request apporach
  */
-router.post("/acceptReqApporach",authMiddelWere,acceptReqApporach)
+router.post("/acceptReqApporach",authMiddleware,acceptReqApporach)
 /**
  * @swagger
  * /user/rejectReqApporach:
@@ -4180,7 +4327,7 @@ router.post("/acceptReqApporach",authMiddelWere,acceptReqApporach)
  *       500:
  *         description: Server error while rejecting the request
  */
-router.post("/rejectReqApporach",authMiddelWere,rejectReqApporach);
+router.post("/rejectReqApporach",authMiddleware,rejectReqApporach);
 /**
  * @swagger
  * /user/ReqApporachShow:
@@ -4236,7 +4383,7 @@ router.post("/rejectReqApporach",authMiddelWere,rejectReqApporach);
  *       500:
  *         description: Server error while retrieving requests
  */
-router.post("/ReqApporachShow",authMiddelWere,ReqApporachShow)
+router.post("/ReqApporachShow",authMiddleware,ReqApporachShow)
 /**
  * @swagger
  * /user/fetchFriendsApporachController:
@@ -4299,7 +4446,7 @@ router.post("/ReqApporachShow",authMiddelWere,ReqApporachShow)
  *       500:
  *         description: Server error.
  */
-router.post("/fetchFriendsApporachController",authMiddelWere,fetchFriendsApporachController);
+router.post("/fetchFriendsApporachController",authMiddleware,fetchFriendsApporachController);
 // /**
 //  * @swagger
 //  * /user/apporachModeProtectorOn:
@@ -4360,7 +4507,7 @@ router.post("/fetchFriendsApporachController",authMiddelWere,fetchFriendsApporac
 //  *       500:
 //  *         description: Server error.
 //  */
-router.post("/apporachModeProtectorOn",authMiddelWere,apporachModeProtectorOn)
+router.post("/apporachModeProtectorOn",authMiddleware,apporachModeProtectorOn)
 /**
  * @swagger
  * /user/sendLiveLocationWithInyourFriends:
@@ -4429,7 +4576,7 @@ router.post("/apporachModeProtectorOn",authMiddelWere,apporachModeProtectorOn)
  *       500:
  *         description: Internal server error
  */
-router.post("/sendLiveLocationWithInyourFriends",authMiddelWere,sendLiveLocationWithInyourFriends)
+router.post("/sendLiveLocationWithInyourFriends",authMiddleware,sendLiveLocationWithInyourFriends)
 /**
  * @swagger
  * /user/getMessages:
@@ -4467,15 +4614,15 @@ router.post("/sendLiveLocationWithInyourFriends",authMiddelWere,sendLiveLocation
  *         description: Internal server error
  */
 
-// router.post("/getMessages",authMiddelWere,getMessages)
+// router.post("/getMessages",authMiddleware,getMessages)
 
-router.post("/friendsInMessingIfOnline",authMiddelWere,friendsInMessingIfOnline);
+router.post("/friendsInMessingIfOnline",authMiddleware,friendsInMessingIfOnline);
 
-router.post("/getMessages",authMiddelWere,getMessages);
+router.post("/getMessages",authMiddleware,getMessages);
 
-router.post("/markMsgAsRead",authMiddelWere,markMsgAsRead)
+router.post("/markMsgAsRead",authMiddleware,markMsgAsRead)
 
-router.post("/FetchPhotoGraphyForHome",authMiddelWere,FetchPhotoGraphyForHome)
+router.post("/FetchPhotoGraphyForHome",authMiddleware,FetchPhotoGraphyForHome)
 
 // /**
 //  * @swagger
@@ -4538,7 +4685,7 @@ router.post("/FetchPhotoGraphyForHome",authMiddelWere,FetchPhotoGraphyForHome)
 //  *       500:
 //  *         description: Server error in handling approach mode
 //  */
-// router.post("/apporachModeToAUser",authMiddelWere,apporachModeToAUser)
+// router.post("/apporachModeToAUser",authMiddleware,apporachModeToAUser)
 // /**
 //  * @swagger
 //  * /user/handelApporachVote:
@@ -4600,7 +4747,7 @@ router.post("/FetchPhotoGraphyForHome",authMiddelWere,FetchPhotoGraphyForHome)
 //  *       500:
 //  *         description: Server Error in Handling Approach Vote
 //  */
-// router.post("/handelApporachVote",authMiddelWere,handelApporachVote)
+// router.post("/handelApporachVote",authMiddleware,handelApporachVote)
 
 
 /**
@@ -4651,7 +4798,7 @@ router.post("/FetchPhotoGraphyForHome",authMiddelWere,FetchPhotoGraphyForHome)
  *       500:
  *         description: Internal server error.
  */
-router.post('/comments', authMiddelWere, addComment);
+router.post('/comments', authMiddleware, addComment);
 
 /**
  * @swagger
@@ -4701,7 +4848,7 @@ router.post('/comments', authMiddelWere, addComment);
  *       500:
  *         description: Internal server error.
  */
-router.post('/replies', authMiddelWere, addReply);
+router.post('/replies', authMiddleware, addReply);
 
 /**
  * @swagger
@@ -4734,7 +4881,7 @@ router.post('/replies', authMiddelWere, addReply);
  *       500:
  *         description: Internal server error.
  */
-router.post('/getComments', authMiddelWere, getComments);
+router.post('/getComments', authMiddleware, getComments);
 
 /**
  * @swagger
@@ -4774,7 +4921,7 @@ router.post('/getComments', authMiddelWere, getComments);
  *       500:
  *         description: Internal server error.
  */
-router.put('/:commentId/like', authMiddelWere, likeComment);
+router.put('/:commentId/like', authMiddleware, likeComment);
 
 /**
  * @swagger
@@ -4821,7 +4968,7 @@ router.put('/:commentId/like', authMiddelWere, likeComment);
  *       500:
  *         description: Internal server error.
  */
-router.post('/share-url', authMiddelWere, getShareablePostUrl);
+router.post('/share-url', authMiddleware, getShareablePostUrl);
 
 /**
  * @swagger
@@ -4865,7 +5012,7 @@ router.post('/share-url', authMiddelWere, getShareablePostUrl);
  *       500:
  *         description: Internal server error.
  */
-router.put('/save', authMiddelWere, toggleSavePost);
+router.put('/save', authMiddleware, toggleSavePost);
 
 /**
  * @swagger
@@ -4908,7 +5055,7 @@ router.put('/save', authMiddelWere, toggleSavePost);
  *       500:
  *         description: Internal server error.
  */
-router.post('/reports', authMiddelWere, submitReport);
+router.post('/reports', authMiddleware, submitReport);
 
 /**
  * @swagger
@@ -4932,7 +5079,7 @@ router.post('/reports', authMiddelWere, submitReport);
  *       500:
  *         description: Internal server error.
  */
-router.get('/reports/pending', authMiddelWere, getPendingReports);
+router.get('/reports/pending', authMiddleware, getPendingReports);
 
 /**
  * @swagger
@@ -4970,25 +5117,31 @@ router.get('/reports/pending', authMiddelWere, getPendingReports);
  *       500:
  *         description: Internal server error.
  */
-router.put('/reports', authMiddelWere, resolveReport);
+router.put('/reports', authMiddleware, resolveReport);
 
 /**
  * @swagger
  * /user/qrCode:
- *   get:
+ *   post:
  *     summary: Generate camMe QR Code
  *     description: Generates a QR code that links to a user's camMe profile.
  *     tags:
  *       - QR Code
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *         description: camMe userId to generate QR code for.
+ *     requestBody:
+ *       description: camMe userId to generate QR code for
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 example: 6644920a4ad4cc66aaae6131
  *     responses:
  *       200:
  *         description: QR code generated successfully.
@@ -5002,11 +5155,11 @@ router.put('/reports', authMiddelWere, resolveReport);
  *                   format: uri
  *                   example: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
  *       400:
- *         description: Missing or invalid username.
+ *         description: Missing or invalid userId.
  *       500:
  *         description: Internal server error.
  */
-router.get('/qrCode', authMiddelWere, getInstagramQrCode);
+router.post('/qrCode', authMiddleware, getInstagramQrCode);
 
 /**
  * @swagger
@@ -5032,7 +5185,7 @@ router.get('/qrCode', authMiddelWere, getInstagramQrCode);
  *                   items:
  *                     $ref: '#/components/schemas/ContentMapping'
  */
-router.get('/getAllPendingBlackCoins', authMiddelWere, getAllPendingBlackCoins);
+router.get('/getAllPendingBlackCoins', authMiddleware, getAllPendingBlackCoins);
 
 
 /**
@@ -5071,7 +5224,7 @@ router.get('/getAllPendingBlackCoins', authMiddelWere, getAllPendingBlackCoins);
  *                 message:
  *                   type: string
  */
-router.post('/approveOrRejectBlackCoin', authMiddelWere, approveOrRejectBlackCoin);
+router.post('/approveOrRejectBlackCoin', authMiddleware, approveOrRejectBlackCoin);
 
 
 

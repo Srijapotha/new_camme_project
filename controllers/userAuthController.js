@@ -3459,7 +3459,6 @@ exports.giveCommentToPost = async (req, res) => {
 
 
 
-// Route will be Not added in userAuthRoutes (work is pending Here)
 exports.giveReplayToCommentPost = async (req, res) => {
     try {
         const userId = req.user.userId;
@@ -3528,6 +3527,47 @@ exports.giveReplayToCommentPost = async (req, res) => {
         })
     }
 }
+
+exports.getAllCommentsAndReplies = async (req, res) => {
+    try {
+        
+        const verification = await verifyUserTokenAndEmail(req);
+        if (!verification.success) {
+            return res.status(200).json(verification);
+        }
+
+        const { postId } = req.body;
+
+        if (!postId) {
+            return res.status(400).json({
+                success: false,
+                message: "Post ID is required"
+            });
+        }
+
+        const post = await Postcreate.findById(postId).select("comments");
+
+        if (!post) {
+            return res.status(404).json({
+                success: false,
+                message: "Post not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Comments and replies fetched successfully",
+            comments: post.comments
+        });
+    } catch (error) {
+        console.error("Error in getAllCommentsAndReplies:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Server error while fetching comments and replies"
+        });
+    }
+};
+
 
 
 
@@ -6737,7 +6777,8 @@ exports.sendLiveLocationWithInyourFriends = async (req, res) => {
 };
 
 
-const Message = require("../models/messageSchema ")
+const Message = require("../models/messageSchema ");
+const { verifyUserTokenAndEmail } = require('../middleware/addirionalSecurity');
 
 // New Controller Not ImpleMent Route
 exports.friendsInMessingIfOnline = async (req, res) => {
@@ -6956,6 +6997,11 @@ exports.FetchPhotoGraphyForHome = async (req, res) => {
 
 exports.getShareablePostUrl = async (req, res) => {
   try {
+    const verification = await verifyUserTokenAndEmail(req);
+        if (!verification.success) {
+            return res.status(200).json(verification);
+        }
+
     const { postId } = req.params;
 
     const post = await Postcreate.findById(postId);
@@ -6988,6 +7034,10 @@ exports.getShareablePostUrl = async (req, res) => {
 
 exports.toggleSavePost = async (req, res) => {
   try {
+     const verification = await verifyUserTokenAndEmail(req);
+        if (!verification.success) {
+            return res.status(200).json(verification);
+        }
     const { postId } = req.body;
     const userId = req.user.userId;
 
