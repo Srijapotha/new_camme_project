@@ -67,6 +67,14 @@ const postSchema = new mongoose.Schema({
                 type: String,
                 required: true,
             },
+            profilePic: {
+            type: String,
+            required: false,
+            },
+            fullName: {
+                type: String,
+                required: false,
+            },
             replies: [
                 {
                     userId: {
@@ -80,7 +88,15 @@ const postSchema = new mongoose.Schema({
                     createdAt: {
                         type: Date,
                         default: Date.now
-                    }
+                    },
+                    profilePic: {
+                        type: String,
+                        required: false,
+                    },
+                    fullName: {
+                        type: String,
+                        required: false,
+                    },
                 }
             ]
         },
