@@ -7005,7 +7005,7 @@ exports.getShareablePostUrl = async (req, res) => {
             return res.status(200).json(verification);
         }
 
-    const { postId } = req.params;
+    const { postId } = req.body;
 
     const post = await Postcreate.findById(postId);
 
