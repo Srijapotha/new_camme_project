@@ -2355,6 +2355,10 @@ router.post("/getAuthorizedUserPost", authMiddleware, getAuthorizedUserPost);
  *                           createdAt:
  *                             type: string
  *                             format: date-time
+ *                           profilePic:
+ *                             type: string
+ *                           userName:
+ *                             type: string
  *                 - type: object
  *                   properties:
  *                     success:
@@ -2510,6 +2514,12 @@ router.post("/giveReplayToCommentPost", authMiddleware, giveReplayToCommentPost)
  *                         type: string
  *                       comment:
  *                         type: string
+ *                       createdAt:
+ *                         type: string
+ *                       profilePic:
+ *                         type: string
+ *                       userName:
+ *                         type: string
  *                       replies:
  *                         type: array
  *                         items:
@@ -2522,6 +2532,10 @@ router.post("/giveReplayToCommentPost", authMiddleware, giveReplayToCommentPost)
  *                             createdAt:
  *                               type: string
  *                               format: date-time
+ *                             profilePic:
+ *                               type: string
+ *                             userName:
+ *                               type: string
  *       400:
  *         description: Missing postId
  *       404:

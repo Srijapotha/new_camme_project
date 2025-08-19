@@ -3369,7 +3369,6 @@ exports.getSinglePost = async (req, res) => {
 exports.giveCommentToPost = async (req, res) => {
     try {
         const userId = req.user.userId;
-        //const { postId } = req.params;
         const { comment, email, token, postId } = req.body;
 
         if (!email || !token) {
@@ -3381,8 +3380,7 @@ exports.giveCommentToPost = async (req, res) => {
 
         const authHeader = req.headers.authorization;
         const authorizedToken = authHeader.split(" ")[1];
-        const userEmail = await User.findById(userId).select("email");
-
+        const userEmail = await User.findById(userId).select("email profilePic userName");
 
         // Compare provided token with authorized token
         if (token !== authorizedToken) {
@@ -3418,19 +3416,8 @@ exports.giveCommentToPost = async (req, res) => {
             return res.status(200).json({
                 success: false,
                 message: "Post not found",
-
             });
         }
-
-        // if (userEmail.posts.length >= 10) {
-        //     userEmail.points = (userEmail.points || 0) + 7;
-        //     await userEmail.save();
-        // }
-
-        // if (userEmail.posts.length <= 10) {
-        //     userEmail.points = (userEmail.points || 0) + 7;
-        //     await userEmail.save();
-        // }
 
         userEmail.points = (userEmail.points || 0) + 7;
 
@@ -3440,7 +3427,13 @@ exports.giveCommentToPost = async (req, res) => {
             await userEmail.save();
         }
 
-        post.comments.push({ userId, comment });
+        // Store profilePic and fullName with the comment
+        post.comments.push({
+            userId,
+            comment,
+            profilePic: userEmail.profilePic || "",
+            fullName: userEmail.userName || ""
+        });
         await post.save();
         return res.status(200).json({
             success: true,
@@ -3473,7 +3466,7 @@ exports.giveReplayToCommentPost = async (req, res) => {
 
         const authHeader = req.headers.authorization;
         const authorizedToken = authHeader.split(" ")[1];
-        const userEmail = await User.findById(userId).select("email");
+        const userEmail = await User.findById(userId).select("email profilePic userName");
 
         // Compare provided token with authorized token
         if (token !== authorizedToken) {
@@ -3510,7 +3503,9 @@ exports.giveReplayToCommentPost = async (req, res) => {
 
         comment.replies.push({
             userId,
-            reply
+            reply,
+            profilePic: userEmail.profilePic || "",
+            userName: userEmail.userName || ""
         })
 
         await posts.save();
@@ -4911,6 +4906,10 @@ exports.giveTedBlackCoin = async (req, res) => {
 
 exports.getAllPendingBlackCoins = async (req, res) => {
     try {
+        const verification = await verifyUserTokenAndEmail(req);
+              if (!verification.success) {
+                return res.status(200).json(verification);
+              }
         const pending = await ContentMapping.find({ status: 'pending' })
             .populate('postId')
             .populate('postUserId')
@@ -4923,6 +4922,10 @@ exports.getAllPendingBlackCoins = async (req, res) => {
 
 exports.approveOrRejectBlackCoin = async (req, res) => {
     try {
+        const verification = await verifyUserTokenAndEmail(req);
+              if (!verification.success) {
+                return res.status(200).json(verification);
+              }
         const { mappingId, action } = req.body; // action: 'approve' or 'reject'
         const ContentMapping = require('../models/contentMapping');
         const mapping = await ContentMapping.findById(mappingId);
