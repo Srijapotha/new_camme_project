@@ -1,9 +1,14 @@
 const Report = require('../models/Report');
 const Post = require('../models/PostModel');
 const Comment = require('../models/comment');
+const { verifyUserTokenAndEmail } = require('../middleware/addirionalSecurity');
 
 exports.submitReport = async (req, res) => {
   try {
+    const verification = await verifyUserTokenAndEmail(req);
+      if (!verification.success) {
+        return res.status(200).json(verification);
+      }
     const { reportedPost, commentId, reason } = req.body;
     const userId = req.user.userId; // Assuming req.user is populated by a JWT middleware
 
@@ -29,6 +34,10 @@ exports.submitReport = async (req, res) => {
 
 exports.getPendingReports = async (req, res) => {
   try {
+    const verification = await verifyUserTokenAndEmail(req);
+      if (!verification.success) {
+        return res.status(200).json(verification);
+      }
     const allReports = await Report.find({status: 'pending'})
       .populate('reporter', 'userName')
       .populate('reportedPost', 'caption')
@@ -44,6 +53,10 @@ exports.getPendingReports = async (req, res) => {
 exports.resolveReport = async (req, res) => {
   try {
     // const { id } = req.params;
+    const verification = await verifyUserTokenAndEmail(req);
+      if (!verification.success) {
+        return res.status(200).json(verification);
+      }
     const { status, takeActionOnContent = false, id } = req.body; // 'dismiss' or 'resolve'
 
     const report = await Report.findById(id);

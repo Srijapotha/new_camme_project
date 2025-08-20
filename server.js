@@ -1,238 +1,307 @@
+// server.js
+
 const dotenv = require('dotenv');
 dotenv.config();
+
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
-const authRoutes = require("./routes/userAuthRoutes");
-const { dbConnect } = require('./dataBase/db');
 const mongoose = require('mongoose');
+
+// Route Imports
+const authRoutes = require("./routes/userAuthRoutes");
+const chatRoutes = require('./routes/chatRoutes');
+const groupRoutes = require('./routes/groupRoutes');
+const referralRoutes = require('./routes/referralRoutes');
+
+// Model Imports (make sure these exist)
+const Message = require("./models/message");
+const User = require("./models/userModel");
+const Chat = require("./models/chat");
+
+// Utility/Service Imports
+const { dbConnect } = require('./dataBase/db');
 const swaggerSetup = require('./swagger');
-const Message = require("./models/messageSchema ")
-const User = require("./models/userModel")
+const admin = require('./firebase');
+require('./utils/messageCleanup');
+require("./timerService");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
 const server = http.createServer(app);
 
-
 const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"],
-    credentials: true
-  }
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"],
+        credentials: true
+    }
 });
 
-// Socket.io connection handling
+// A map to store active sockets and their user IDs
 const connectedUsers = new Map();
-const typingUsers = new Map();
 
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+    console.log('User connected:', socket.id);
 
-  // User joins
-  socket.on('join', async (userId) => {
-    try {
-      socket.userId = userId;
-      connectedUsers.set(userId, socket.id);
+    /**
+     * @description Handles a user joining a chat application.
+     * @param {string} userId - The unique ID of the user.
+     */
+    socket.on('join', async (userId) => {
+        try {
+            socket.userId = userId;
+            connectedUsers.set(userId, socket.id);
 
-      // Update user online status
-      await User.findByIdAndUpdate(userId, {
-        isOnline: true,
-        lastSeen: new Date()
-      });
+            await User.findByIdAndUpdate(userId, { isOnline: true, lastSeen: new Date() });
+            socket.broadcast.emit('userOnline', userId);
 
-      // Notify others about online status
-      socket.broadcast.emit('userOnline', userId);
+            const onlineUsers = Array.from(connectedUsers.keys());
+            socket.emit('onlineUsers', onlineUsers);
 
-      // Send online users list
-      const onlineUsers = Array.from(connectedUsers.keys());
-      socket.emit('onlineUsers', onlineUsers);
-
-    } catch (error) {
-      console.error('Error in join:', error);
-    }
-  });
-
-  // Send message
-  socket.on('sendMessage', async (data) => {
-    try {
-      const { receiverId, message, messageType = 'text' } = data;
-
-      // Save message to database
-      const newMessage = new Message({
-        senderId: socket.userId,
-        receiverId,
-        message,
-        messageType
-      });
-
-      await newMessage.save();
-
-      // Populate sender info
-      await newMessage.populate('senderId', 'userName profilePic');
-      await newMessage.populate('receiverId', 'userName profilePic');
-
-      // Send to receiver if online
-      const receiverSocketId = connectedUsers.get(receiverId);
-      if (receiverSocketId) {
-        io.to(receiverSocketId).emit('receiveMessage', newMessage);
-      }
-
-      // Send back to sender for confirmation
-      socket.emit('messageDelivered', newMessage);
-
-    } catch (error) {
-      console.error('Error sending message:', error);
-      socket.emit('messageError', { error: 'Failed to send message' });
-    }
-  });
-
-  // Typing indicator
-  socket.on('typing', (data) => {
-    const { receiverId, isTyping } = data;
-    const receiverSocketId = connectedUsers.get(receiverId);
-
-    if (receiverSocketId) {
-      if (isTyping) {
-        typingUsers.set(`${socket.userId}-${receiverId}`, true);
-        io.to(receiverSocketId).emit('userTyping', {
-          userId: socket.userId,
-          isTyping: true
-        });
-      } else {
-        typingUsers.delete(`${socket.userId}-${receiverId}`);
-        io.to(receiverSocketId).emit('userTyping', {
-          userId: socket.userId,
-          isTyping: false
-        });
-      }
-    }
-  });
-
-  // Message read receipt
-  socket.on('messageRead', async (data) => {
-    try {
-      const { messageId, senderId } = data;
-
-      // Update message as read
-      await Message.findByIdAndUpdate(messageId, {
-        isRead: true,
-        readAt: new Date()
-      });
-
-      // Notify sender
-      const senderSocketId = connectedUsers.get(senderId);
-      if (senderSocketId) {
-        io.to(senderSocketId).emit('messageReadConfirmation', {
-          messageId,
-          readBy: socket.userId,
-          readAt: new Date()
-        });
-      }
-
-    } catch (error) {
-      console.error('Error marking message as read:', error);
-    }
-  });
-
-  // Disconnect
-  socket.on('disconnect', async () => {
-    try {
-      if (socket.userId) {
-        connectedUsers.delete(socket.userId);
-
-        // Update user offline status
-        await User.findByIdAndUpdate(socket.userId, {
-          isOnline: false,
-          lastSeen: new Date()
-        });
-
-        // Clear typing indicators
-        for (const [key] of typingUsers) {
-          if (key.startsWith(socket.userId)) {
-            typingUsers.delete(key);
-          }
+        } catch (error) {
+            console.error('Error in join:', error);
         }
+    });
 
-        // Notify others about offline status
-        socket.broadcast.emit('userOffline', socket.userId);
-      }
+    /**
+     * @description Handles a user joining a specific chat room (private or group).
+     * @param {object} data - Contains userId and chatId.
+     */
+    socket.on('joinChat', async (data) => {
+        const { userId, chatId } = data;
+        socket.join(chatId);
+        socket.userId = userId;
+        socket.currentChat = chatId;
+        await User.findByIdAndUpdate(userId, { lastSeen: new Date() });
+    });
 
-      console.log('User disconnected:', socket.id);
-    } catch (error) {
-      console.error('Error in disconnect:', error);
-    }
-  });
+    /**
+     * @description Handles sending a message within a specific chat room.
+     * @param {object} data - Contains chatId, senderId, content, etc.
+     */
+    socket.on('sendMessage', async (data) => {
+        try {
+            const { chatId, senderId, content, messageType, mediaUrl } = data;
+            const chat = await Chat.findById(chatId).populate('participants');
+            const sender = await User.findById(senderId);
+
+            if (!sender || !chat) {
+                return socket.emit('messageError', { error: 'Invalid sender or chat' });
+            }
+
+            const message = new Message({
+                chatId,
+                senderId,
+                content,
+                messageType: messageType || 'text',
+                mediaUrl,
+                sentAt: new Date()
+            });
+
+            if (chat.autoDeleteTime > 0) {
+                message.autoDeleteAt = new Date(Date.now() + chat.autoDeleteTime * 60 * 60 * 1000);
+            }
+
+            await message.save();
+            await message.populate('senderId', 'userName');
+
+            // send notification
+            for (const participant of chat.participants) {
+                if (participant._id.toString() !== senderId.toString()) {
+                    const user = await User.findById(participant._id);
+                    if (user && user.fcmToken) {
+                        try {
+                            await admin.messaging().send({
+                                token: user.fcmToken,
+                                notification: {
+                                    title: `New message from ${sender.userName || sender.username}`,
+                                    body: content || (messageType === 'image' ? '📷 Image' : 'New message'),
+                                },
+                                data: {
+                                    chatId: chatId.toString(),
+                                    senderId: senderId.toString(),
+                                    messageId: message._id.toString(),
+                                }
+                            });
+                        } catch (err) {
+                            console.error('FCM send error:', err.message);
+                        }
+                    }
+                }
+            }
+
+            chat.participants.forEach(participant => {
+                if (!sender.restrictedUsers.includes(participant._id)) {
+                    io.to(chatId).emit('newMessage', message);
+                }
+            });
+
+            await Chat.findByIdAndUpdate(chatId, { lastActivity: new Date() });
+
+        } catch (error) {
+            console.error('Error sending message:', error);
+            socket.emit('messageError', { message: error.message });
+        }
+    });
+
+    /**
+     * @description Handles typing indicators.
+     * @param {object} data - Contains receiverId and isTyping boolean.
+     */
+    socket.on('typing', (data) => {
+        const { receiverId, isTyping } = data;
+        const receiverSocketId = connectedUsers.get(receiverId);
+
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('userTyping', {
+                userId: socket.userId,
+                isTyping
+            });
+        }
+    });
+
+    /**
+     * @description Handles message read receipts.
+     * @param {object} data - Contains messageId and senderId.
+     */
+    socket.on('messageRead', async (data) => {
+        try {
+            const { messageId, senderId } = data;
+
+            await Message.findByIdAndUpdate(messageId, { isRead: true, readAt: new Date() });
+            const senderSocketId = connectedUsers.get(senderId);
+
+            if (senderSocketId) {
+                io.to(senderSocketId).emit('messageReadConfirmation', {
+                    messageId,
+                    readBy: socket.userId,
+                    readAt: new Date()
+                });
+            }
+        } catch (error) {
+            console.error('Error marking message as read:', error);
+        }
+    });
+
+    /**
+     * @description Handles pinning/unpinning a message in a group.
+     * @param {object} data - Contains chatId, messageId, userId, and action.
+     */
+    socket.on('pinMessage', async (data) => {
+        try {
+            const { chatId, messageId, userId, action } = data;
+            const chat = await Chat.findById(chatId);
+
+            if (!chat.isGroup || !chat.adminId.equals(userId)) {
+                return socket.emit('error', { message: 'Only group admin can pin messages' });
+            }
+
+            if (action === 'pin') {
+                await Chat.findByIdAndUpdate(chatId, { $addToSet: { pinnedMessages: messageId } });
+                await Message.findByIdAndUpdate(messageId, { isPinned: true });
+            } else {
+                await Chat.findByIdAndUpdate(chatId, { $pull: { pinnedMessages: messageId } });
+                await Message.findByIdAndUpdate(messageId, { isPinned: false });
+            }
+            io.to(chatId).emit('messagePinned', { messageId, action });
+        } catch (error) {
+            socket.emit('error', { message: error.message });
+        }
+    });
+
+    /**
+     * @description Handles a user leaving a chat room.
+     * @param {string} chatId - The ID of the chat room to leave.
+     */
+    socket.on('leaveChat', (chatId) => {
+        socket.leave(chatId);
+    });
+
+    /**
+     * @description Handles user disconnection.
+     */
+    socket.on('disconnect', async () => {
+        try {
+            if (socket.userId) {
+                connectedUsers.delete(socket.userId);
+                await User.findByIdAndUpdate(socket.userId, { isOnline: false, lastSeen: new Date() });
+                socket.broadcast.emit('userOffline', socket.userId);
+            }
+            console.log('User disconnected:', socket.id);
+        } catch (error) {
+            console.error('Error in disconnect:', error);
+        }
+    });
 });
 
-
+// Express Middleware and Route setup
 app.use(cors({ origin: "*", credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 swaggerSetup(app);
 
+// Database connection
 dbConnect();
 
-
+// API Routes
 app.use("/api/v1/user", authRoutes);
-require("./timerService");
+app.use('/api/v1/chat', chatRoutes);
+app.use('/api/v1/group', groupRoutes);
+app.use('/api/v1/referral', referralRoutes);
 
 app.get("/", (req, res) => {
-  res.send("Welcome to the Cam Me Application API Documentation");
-}
-);
+    res.send("Welcome to the Cam Me Application API Documentation");
+});
 
-
-// in server.js or app.js
 app.get('/reset-window', (req, res) => {
-  const email = req.query.email;
+    const email = req.query.email;
 
-  res.send(`
-      <html>
-        <head><title>Reset Password</title></head>
-        <body>
-          <h2>Reset Your Password</h2>
-          <form id="resetForm">
-            <input type="hidden" id="email" value="${email}" />
-            <label>OTP:</label>
-            <input type="text" id="otp" required /><br/><br/>
-            <label>New Password:</label>
-            <input type="password" id="newPassword" required /><br/><br/>
-            <button type="submit">Save</button>
-          </form>
-  
-          <script>
-            document.getElementById('resetForm').addEventListener('submit', async (e) => {
-              e.preventDefault();
-              const email = document.getElementById('email').value;
-              const otp = document.getElementById('otp').value;
-              const newPassword = document.getElementById('newPassword').value;
-  
-              const res = await fetch('/api/v1/user/reset-password',{
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, otp, newPassword })
-              });
-  
-              const data = await res.json();
-              if (data.sucess) {
-                alert("Password reset successful!");
-                window.close();
-              } else {
-                alert(data.message || "Reset failed");
-              }
-            });
-          </script>
-        </body>
-      </html>
+    res.send(`
+        <html>
+            <head><title>Reset Password</title></head>
+            <body>
+                <h2>Reset Your Password</h2>
+                <form id="resetForm">
+                    <input type="hidden" id="email" value="${email}" />
+                    <label>OTP:</label>
+                    <input type="text" id="otp" required /><br/><br/>
+                    <label>New Password:</label>
+                    <input type="password" id="newPassword" required /><br/><br/>
+                    <button type="submit">Save</button>
+                </form>
+                <script>
+                    document.getElementById('resetForm').addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        const email = document.getElementById('email').value;
+                        const otp = document.getElementById('otp').value;
+                        const newPassword = document.getElementById('newPassword').value;
+
+                        const res = await fetch('/api/v1/user/reset-password',{
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, otp, newPassword })
+                        });
+
+                        const data = await res.json();
+                        if (data.sucess) {
+                            alert("Password reset successful!");
+                            window.close();
+                        } else {
+                            alert(data.message || "Reset failed");
+                        }
+                    });
+                </script>
+            </body>
+        </html>
     `);
 });
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 server.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
-  console.log(`Api Docs avaliable  at http://localhost:${PORT}/api-docs`);
+    console.log(`Server is running at http://localhost:${PORT}`);
+    console.log(`Api Docs available at http://localhost:${PORT}/api-docs`);
 });
