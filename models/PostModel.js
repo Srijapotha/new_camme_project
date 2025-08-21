@@ -75,6 +75,10 @@ const postSchema = new mongoose.Schema({
                 type: String,
                 required: false,
             },
+            createdAt: {
+                type: Date,
+                default: Date.now
+            },
             replies: [
                 {
                     userId: {
