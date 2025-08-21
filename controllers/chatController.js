@@ -3,9 +3,14 @@ const User = require('../models/userModel');
 const Chat = require('../models/chat');
 const Message = require('../models/message');
 const { upload } = require('../config/cloudinary');
+const { verifyUserTokenAndEmail } = require('../middleware/addirionalSecurity');
 
 exports.searchChats = async (req, res) => {
   try {
+     const verification = await verifyUserTokenAndEmail(req);
+            if (!verification.success) {
+                return res.status(200).json(verification);
+            }
     const { userId, searchTerm } = req.body;
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
@@ -36,6 +41,10 @@ exports.searchChats = async (req, res) => {
 
 exports.createPrivateChat = async (req, res) => {
     try {
+       const verification = await verifyUserTokenAndEmail(req);
+        if (!verification.success) {
+            return res.status(200).json(verification);
+        }
         const { userId1, userId2 } = req.body;
 
         // Ensure both users exist
@@ -82,6 +91,10 @@ exports.createPrivateChat = async (req, res) => {
 
 exports.getChatMessages = async (req, res) => {
   try {
+     const verification = await verifyUserTokenAndEmail(req);
+            if (!verification.success) {
+                return res.status(200).json(verification);
+            }
     const { chatId } = req.body;
     if (!chatId) {
       return res.status(400).json({ error: 'chatId is required' });
@@ -97,6 +110,10 @@ exports.getChatMessages = async (req, res) => {
 
 exports.sendImageMessage = async (req, res) => {
   try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
     const { chatId, senderId, content } = req.body;
     if (!req.file || !req.file.path) {
       return res.status(400).json({ error: 'Image file is required' });
@@ -120,6 +137,10 @@ exports.sendImageMessage = async (req, res) => {
 
 exports.filterMessages = async (req, res) => {
   try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
     const { chatId, year, month, day } = req.body;
     let startDate = new Date(year, month - 1, day || 1);
     let endDate = day ? 
@@ -139,6 +160,10 @@ exports.filterMessages = async (req, res) => {
 
 exports.setChatPin = async (req, res) => {
   try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
     const { userId, chatId, pin } = req.body;
     if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
       return res.status(400).json({ error: 'PIN must be 4 digits' });
@@ -170,6 +195,10 @@ exports.verifyChatPin = async (req, res) => {
 
 exports.saveMessage = async (req, res) => {
   try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
     const { userId, messageId } = req.body;
     await User.findByIdAndUpdate(userId, {
       $addToSet: { savedMessages: { messageId, savedAt: new Date() } }
@@ -182,6 +211,10 @@ exports.saveMessage = async (req, res) => {
 
 exports.blockUser = async (req, res) => {
   try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
     const { userId, targetUserId, action } = req.body;
     const updateOperation = action === 'block' ? 
       { $addToSet: { blockedUsers: targetUserId } } :
@@ -195,6 +228,10 @@ exports.blockUser = async (req, res) => {
 
 exports.restrictUser = async (req, res) => {
   try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
     const { userId, targetUserId, action } = req.body;
     const updateOperation = action === 'restrict' ? 
       { $addToSet: { restrictedUsers: targetUserId } } :

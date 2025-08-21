@@ -46,6 +46,14 @@ const { upload } = require('../config/cloudinary');
  *                 type: string
  *               searchTerm:
  *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       200:
  *         description: A list of matching users and existing private chats.
@@ -80,6 +88,14 @@ router.post('/search-chats', authMiddleware, searchChats);
  *               userId2:
  *                 type: string
  *                 description: ID of the second user.
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       201:
  *         description: New private chat created.
@@ -127,6 +143,14 @@ router.post('/create-private-chat', authMiddleware, createPrivateChat);
  *               chatId:
  *                 type: string
  *                 description: The ID of the chat
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       200:
  *         description: List of messages
@@ -222,6 +246,14 @@ router.post('/sendImageMessage', authMiddleware, upload.single('image'), sendIma
  *               day:
  *                 type: integer
  *                 description: Optional day to filter by.
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       200:
  *         description: A list of messages filtered by the specified date range.
@@ -258,6 +290,14 @@ router.post('/filter-messages', authMiddleware, filterMessages);
  *               pin:
  *                 type: string
  *                 description: A 4-digit PIN.
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       200:
  *         description: PIN set successfully.
@@ -295,6 +335,14 @@ router.post('/set-chat-pin', authMiddleware, setChatPin);
  *                 type: string
  *               pin:
  *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       200:
  *         description: PIN verification result.
@@ -336,6 +384,14 @@ router.post('/verify-chat-pin', authMiddleware, verifyChatPin);
  *                 type: string
  *               messageId:
  *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       200:
  *         description: Message saved successfully.
@@ -372,6 +428,14 @@ router.post('/save-message', authMiddleware, saveMessage);
  *               action:
  *                 type: string
  *                 enum: [block, unblock]
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       200:
  *         description: User blocked/unblocked successfully.
@@ -408,6 +472,14 @@ router.post('/block-user', authMiddleware, blockUser);
  *               action:
  *                 type: string
  *                 enum: [restrict, unrestrict]
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       200:
  *         description: User restricted/unrestricted successfully.

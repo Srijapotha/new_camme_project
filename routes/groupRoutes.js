@@ -39,6 +39,14 @@ const {authMiddleware} = require('../middleware/authMiddleware');
  *                   type: string
  *               groupTheme:
  *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       200:
  *         description: Group created successfully.
@@ -81,6 +89,14 @@ router.post('/create-group', authMiddleware, createGroup);
  *                 type: string
  *               newMemberId:
  *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       200:
  *         description: Member added successfully.
@@ -116,6 +132,14 @@ router.post('/add-member', authMiddleware, addMember);
  *                 type: string
  *               memberId:
  *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       200:
  *         description: Member removed successfully.
@@ -146,6 +170,14 @@ router.post('/remove-member', authMiddleware, removeMember);
  *               userId:
  *                 type: string
  *                 description: The user's ID
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
  *     responses:
  *       200:
  *         description: List of groups the user is a member of.

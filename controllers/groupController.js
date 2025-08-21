@@ -1,8 +1,14 @@
 const Chat = require('../models/chat');
 const User = require('../models/userModel');
+const { verifyUserTokenAndEmail } = require('../middleware/addirionalSecurity');
 
 exports.createGroup = async (req, res) => {
   try {
+    const { email, token } = req.body;
+    const user = await verifyUserTokenAndEmail(email, token);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     const { adminId, groupName, participants, groupTheme } = req.body;
     const group = new Chat({
       participants: [adminId, ...participants],
@@ -21,6 +27,11 @@ exports.createGroup = async (req, res) => {
 
 exports.addMember = async (req, res) => {
   try {
+    const { email, token } = req.body;
+    const user = await verifyUserTokenAndEmail(email, token);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     const { groupId, adminId, newMemberId } = req.body;
     const group = await Chat.findById(groupId);
     if (!group.adminId.equals(adminId)) {
@@ -37,6 +48,11 @@ exports.addMember = async (req, res) => {
 
 exports.removeMember = async (req, res) => {
   try {
+    const { email, token } = req.body;
+    const user = await verifyUserTokenAndEmail(email, token);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     const { groupId, adminId, memberId } = req.body;
     const group = await Chat.findById(groupId);
     if (!group.adminId.equals(adminId)) {
@@ -53,7 +69,11 @@ exports.removeMember = async (req, res) => {
 
 exports.getMyGroups = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const { userId, email, token } = req.body;
+    const user = await verifyUserTokenAndEmail(email, token);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     if (!userId) {
       return res.status(400).json({ error: 'userId is required' });
     }
