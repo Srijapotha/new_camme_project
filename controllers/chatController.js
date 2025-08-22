@@ -4,6 +4,87 @@ const Chat = require('../models/chat');
 const Message = require('../models/message');
 const { upload } = require('../config/cloudinary');
 const { verifyUserTokenAndEmail } = require('../middleware/addirionalSecurity');
+const { setNotificationSetting, getNotificationSetting, setPin, verifyPin } = require('../utils/chatGroupUtils');
+
+// AUTO-DELETE CLEANUP FUNCTION
+const cleanupExpiredMessages = async () => {
+  const now = new Date();
+  await Message.deleteMany({ autoDeleteAt: { $lte: now } });
+};
+
+// Call cleanupExpiredMessages periodically (every hour)
+setInterval(cleanupExpiredMessages, 60 * 60 * 1000);
+
+// SHARED MEDIA ENDPOINT
+exports.getSharedMedia = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { chatId } = req.body;
+    if (!chatId) {
+      return res.status(400).json({ error: 'chatId is required' });
+    }
+    const mediaMessages = await Message.find({
+      chatId,
+      mediaUrl: { $exists: true, $ne: null },
+    }).populate('senderId', 'userName fullName profilePic isOnline lastSeen');
+    const formatted = mediaMessages.map(msg => ({
+      _id: msg._id,
+      chatId: msg.chatId,
+      senderId: msg.senderId?._id,
+      senderProfile: msg.senderId ? {
+        userName: msg.senderId.userName,
+        fullName: msg.senderId.fullName,
+        profilePic: msg.senderId.profilePic,
+        isOnline: msg.senderId.isOnline,
+        lastSeen: msg.senderId.lastSeen
+      } : null,
+      mediaUrl: msg.mediaUrl,
+      mediaType: msg.mediaType,
+      sentAt: msg.sentAt
+    }));
+    res.json(formatted);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// NOTIFICATION SETTINGS ENDPOINTS
+exports.setNotification = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { userId, contactId, enabled } = req.body;
+    if (!userId || !contactId || typeof enabled !== 'boolean') {
+      return res.status(400).json({ error: 'userId, contactId, and enabled are required' });
+    }
+    await setNotificationSetting(User, userId, contactId, enabled);
+    res.json({ message: 'Notification setting updated' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.getNotification = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { userId, contactId } = req.body;
+    if (!userId || !contactId) {
+      return res.status(400).json({ error: 'userId and contactId are required' });
+    }
+    const enabled = await getNotificationSetting(User, userId, contactId);
+    res.json({ enabled });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
 exports.searchChats = async (req, res) => {
   try {
@@ -100,9 +181,27 @@ exports.getChatMessages = async (req, res) => {
       return res.status(400).json({ error: 'chatId is required' });
     }
     const messages = await Message.find({ chatId })
-      .populate('senderId', 'username')
+      .populate('senderId', 'userName fullName profilePic isOnline lastSeen')
       .sort({ sentAt: 1 });
-    res.status(200).json(messages);
+    // Format messages to always include sentAt and sender profile info
+    const formatted = messages.map(msg => ({
+      _id: msg._id,
+      chatId: msg.chatId,
+      senderId: msg.senderId?._id,
+      senderProfile: msg.senderId ? {
+        userName: msg.senderId.userName,
+        fullName: msg.senderId.fullName,
+        profilePic: msg.senderId.profilePic,
+        isOnline: msg.senderId.isOnline,
+        lastSeen: msg.senderId.lastSeen
+      } : null,
+      content: msg.content,
+      messageType: msg.messageType,
+      mediaUrl: msg.mediaUrl,
+      sentAt: msg.sentAt,
+      autoDeleteAt: msg.autoDeleteAt
+    }));
+    res.status(200).json(formatted);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -164,14 +263,8 @@ exports.setChatPin = async (req, res) => {
     if (!verification.success) {
       return res.status(200).json(verification);
     }
-    const { userId, chatId, pin } = req.body;
-    if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
-      return res.status(400).json({ error: 'PIN must be 4 digits' });
-    }
-    const hashedPin = await bcrypt.hash(pin, 10);
-    await User.findByIdAndUpdate(userId, {
-      [`privateChatPins.${chatId}`]: hashedPin
-    });
+    const { userId, chatId, pin, oldPin } = req.body;
+    await setPin(User, userId, 'privateChatPins', chatId, pin, oldPin);
     res.json({ message: 'PIN set successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -180,13 +273,12 @@ exports.setChatPin = async (req, res) => {
 
 exports.verifyChatPin = async (req, res) => {
   try {
-    const { userId, chatId, pin } = req.body;
-    const user = await User.findById(userId);
-    const storedPin = user.privateChatPins.get(chatId);
-    if (!storedPin) {
-      return res.status(404).json({ error: 'No PIN set for this chat' });
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
     }
-    const isValid = await bcrypt.compare(pin, storedPin);
+    const { userId, chatId, pin } = req.body;
+    const isValid = await verifyPin(User, userId, 'privateChatPins', chatId, pin);
     res.json({ valid: isValid });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -226,6 +318,7 @@ exports.blockUser = async (req, res) => {
   }
 };
 
+
 exports.restrictUser = async (req, res) => {
   try {
     const verification = await verifyUserTokenAndEmail(req);
@@ -238,6 +331,161 @@ exports.restrictUser = async (req, res) => {
       { $pull: { restrictedUsers: targetUserId } };
     await User.findByIdAndUpdate(userId, updateOperation);
     res.json({ message: `User ${action}ed successfully` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// --- MISSING FUNCTIONALITIES ---
+
+// 1. GROUP CHAT PIN MANAGEMENT
+exports.setGroupChatPin = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { userId, groupId, pin, oldPin } = req.body;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (oldPin) {
+      const storedPin = user.groupChatPins?.get(groupId);
+      if (!storedPin || !(await bcrypt.compare(oldPin, storedPin))) {
+        return res.status(400).json({ error: 'Old PIN incorrect' });
+      }
+    }
+    if (pin.length !== 4 || !/^[0-9]{4}$/.test(pin)) {
+      return res.status(400).json({ error: 'PIN must be 4 digits' });
+    }
+    const hashedPin = await bcrypt.hash(pin, 10);
+    await User.findByIdAndUpdate(userId, {
+      [`groupChatPins.${groupId}`]: hashedPin
+    });
+    res.json({ message: 'Group chat PIN set/changed successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.verifyGroupChatPin = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { userId, groupId, pin } = req.body;
+    const user = await User.findById(userId);
+    const storedPin = user.groupChatPins?.get(groupId);
+    if (!storedPin) {
+      return res.status(404).json({ error: 'No PIN set for this group chat' });
+    }
+    const isValid = await bcrypt.compare(pin, storedPin);
+    res.json({ valid: isValid });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// 2. AUTO-DELETE SETTINGS
+exports.getAutoDeleteSetting = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { chatId } = req.body;
+    const chat = await Chat.findById(chatId);
+    if (!chat) return res.status(404).json({ error: 'Chat not found' });
+    res.json({ autoDeleteTime: chat.autoDeleteTime || null });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.setAutoDeleteSetting = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { chatId, autoDeleteTime } = req.body;
+    if (!autoDeleteTime || isNaN(autoDeleteTime)) {
+      return res.status(400).json({ error: 'autoDeleteTime (minutes) required' });
+    }
+    await Chat.findByIdAndUpdate(chatId, { autoDeleteTime });
+    res.json({ message: 'Auto-delete time updated', autoDeleteTime });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// 3. SAVED MESSAGES LISTING & DELETION
+exports.listSavedMessages = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { userId } = req.body;
+    const user = await User.findById(userId).populate('savedMessages.messageId');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    const formatted = (user.savedMessages || []).map(sm => ({
+      messageId: sm.messageId?._id,
+      content: sm.messageId?.content,
+      senderId: sm.messageId?.senderId,
+      receiverId: sm.messageId?.receiverId,
+      sentAt: sm.messageId?.sentAt,
+      savedAt: sm.savedAt
+    }));
+    res.json({ savedMessages: formatted });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.deleteSavedMessage = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { userId, messageId } = req.body;
+    await User.findByIdAndUpdate(userId, {
+      $pull: { savedMessages: { messageId } }
+    });
+    res.json({ message: 'Saved message deleted' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// 4. BLOCKED USER LIST
+exports.listBlockedUsers = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { userId } = req.body;
+    const user = await User.findById(userId).populate('blockedUsers', 'username email fullName profilePic');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json({ blockedUsers: user.blockedUsers });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// 5. RESTRICTED USER LIST
+exports.listRestrictedUsers = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { userId } = req.body;
+    const user = await User.findById(userId).populate('restrictedUsers', 'username email fullName profilePic');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json({ restrictedUsers: user.restrictedUsers });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

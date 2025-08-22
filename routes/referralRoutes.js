@@ -1,5 +1,5 @@
 const express = require('express');
-const {registerUser, getReferralStats} = require('../controllers/referralController');
+const {registerUser, getReferralStats, getAppDownloadReferralLink} = require('../controllers/referralController');
 const router = express.Router();
 const {authMiddleware} = require('../middleware/authMiddleware');
 
@@ -12,10 +12,10 @@ const {authMiddleware} = require('../middleware/authMiddleware');
 
 /**
  * @swagger
- * /api/referral/register:
+ * /api/referral/referral-stats:
  *   post:
- *     summary: Register a new user with an optional referral ID
- *     description: Registers a user and optionally links them to a referrer for rewards.
+ *     summary: Get referral statistics for a user
+ *     description: Retrieves referral stats including points, referral link, and coin wallet.
  *     tags:
  *       - Referral
  *     requestBody:
@@ -25,50 +25,18 @@ const {authMiddleware} = require('../middleware/authMiddleware');
  *           schema:
  *             type: object
  *             required:
- *               - username
  *               - email
+ *               - token
  *             properties:
- *               username:
- *                 type: string
  *               email:
  *                 type: string
- *               referredBy:
+ *                 format: email
+ *               token:
  *                 type: string
- *                 description: The referral ID of the person who referred this user.
- *     responses:
- *       200:
- *         description: User registered successfully, and referral rewards distributed.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 user:
- *                   $ref: '#/components/schemas/User'
- *                 referralLink:
- *                   type: string
- *                 message:
- *                   type: string
- *       500:
- *         description: Server error.
- */
-router.post('/register', authMiddleware, registerUser);
-
-/**
- * @swagger
- * /api/referral/referral-stats/{userId}:
- *   get:
- *     summary: Get referral statistics for a user
- *     description: Retrieves referral stats including points, referral link, and coin wallet.
- *     tags:
- *       - Referral
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the user.
+ *                 description: JWT token for authentication
+ *               userId:
+ *                 type: string
+ *                 description: The ID of the user.
  *     responses:
  *       200:
  *         description: Referral statistics retrieved successfully.
@@ -81,24 +49,61 @@ router.post('/register', authMiddleware, registerUser);
  *                   type: string
  *                 referralLink:
  *                   type: string
- *                 points:
+ *                 scorePoints:
  *                   type: integer
- *                 coinWallet:
+ *                 coins:
  *                   type: object
- *                   properties:
- *                     tedGold:
- *                       type: integer
- *                     tedSilver:
- *                       type: integer
- *                     tedBronze:
- *                       type: integer
- *                     tedBlack:
- *                       type: integer
  *                 totalReferred:
  *                   type: integer
  *       500:
  *         description: Server error.
  */
-router.get('/referral-stats/:userId', authMiddleware, getReferralStats);
+router.post('/referral-stats', authMiddleware, getReferralStats);
+
+/**
+ * @swagger
+ * /api/referral/app-download-link:
+ *   post:
+ *     summary: Get app download URL with referral code
+ *     description: Returns a shareable app download URL containing the user's referral code.
+ *     tags:
+ *       - Referral
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - token
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *               userId:
+ *                 type: string
+ *                 description: The ID of the user.
+ *     responses:
+ *       200:
+ *         description: App download referral link generated successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 downloadUrl:
+ *                   type: string
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Server error.
+ */
+router.post('/app-download-link', authMiddleware, getAppDownloadReferralLink);
 
 module.exports = router;

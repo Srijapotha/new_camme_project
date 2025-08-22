@@ -92,6 +92,16 @@ io.on('connection', (socket) => {
                 return socket.emit('messageError', { error: 'Invalid sender or chat' });
             }
 
+            // Blocked user check: if any recipient has blocked the sender, do not deliver
+            for (const participant of chat.participants) {
+                if (participant._id.toString() !== senderId.toString()) {
+                    const recipient = await User.findById(participant._id);
+                    if (recipient.blockedUsers && recipient.blockedUsers.map(id => id.toString()).includes(senderId.toString())) {
+                        return socket.emit('messageError', { error: 'You are blocked by this user and cannot send messages.' });
+                    }
+                }
+            }
+
             const message = new Message({
                 chatId,
                 senderId,

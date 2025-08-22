@@ -41,10 +41,13 @@ const transPorter = nodeMailer.createTransport({
 
 const generateOtp = () => Math.floor(1000 + Math.random() * 9000).toString();
 
+function generateReferralId() {
+  return 'REF' + Math.random().toString(36).substring(2, 8).toUpperCase();
+}
 
 exports.register = async (req, res) => {
     try {
-        const { gender, dateBirth, fullName, email, phoneNo } = req.body;
+        const { gender, dateBirth, fullName, email, phoneNo, referredBy } = req.body;
 
         if (!gender || !dateBirth || !fullName || !email || !phoneNo) {
             return res.status(200).json({
@@ -60,6 +63,24 @@ exports.register = async (req, res) => {
                 message: 'User already exists',
             });
         }
+
+         let referralId;
+            do {
+              referralId = generateReferralId();
+            } while (await User.findOne({ referralId }));
+            if (referredBy) {
+              const referrer = await User.findOne({ referralId: referredBy });
+              if (referrer) {
+                await User.findByIdAndUpdate(referrer._id, {
+                  $inc: {
+                    scorePoints: 250,
+                    'coins.tedGold': 50,
+                    'coins.tedSilver': 35,
+                    'coins.tedBrown': 15
+                  }
+                });
+              }
+            }
 
         const otp = generateOtp();
         const otpExpires = Date.now() + 2 * 60 * 1000; // 2 minutes
@@ -101,6 +122,7 @@ exports.register = async (req, res) => {
             otpExpires,
             userName,
             fcmToken: randomSuffix,
+            referralId
         });
 
         await user.save();
