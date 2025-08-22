@@ -575,14 +575,385 @@ router.post('/shared-media', authMiddleware, safeHandler('getGroupSharedMedia'))
  */
 router.post('/exit', authMiddleware, safeHandler('exitGroup'));
 
-// New group chat settings routes
+/**
+ * @swagger
+ * /group/set-group-pin:
+ *   post:
+ *     summary: Set a PIN for a group chat
+ *     description: Sets a 4-digit PIN for a group chat for the user.
+ *     tags:
+ *       - Group
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - groupId
+ *               - pin
+ *             properties:
+ *               userId:
+ *                 type: string
+ *               groupId:
+ *                 type: string
+ *               pin:
+ *                 type: string
+ *                 description: A 4-digit PIN.
+ *               oldPin:
+ *                 type: string
+ *                 description: Old PIN if changing.
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *     responses:
+ *       200:
+ *         description: Group chat PIN set/changed successfully.
+ *       400:
+ *         description: Invalid PIN format or old PIN incorrect.
+ *       500:
+ *         description: Server error.
+ */
 router.post('/set-group-pin', authMiddleware, safeHandler('setGroupPin'));
+
+/**
+ * @swagger
+ * /group/verify-group-pin:
+ *   post:
+ *     summary: Verify the PIN for a group chat
+ *     description: Verifies the PIN entered for a group chat.
+ *     tags:
+ *       - Group
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - groupId
+ *               - pin
+ *             properties:
+ *               userId:
+ *                 type: string
+ *               groupId:
+ *                 type: string
+ *               pin:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *     responses:
+ *       200:
+ *         description: PIN verification result.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 valid:
+ *                   type: boolean
+ *       404:
+ *         description: No PIN set for this group chat.
+ *       500:
+ *         description: Server error.
+ */
 router.post('/verify-group-pin', authMiddleware, safeHandler('verifyGroupPin'));
+
+/**
+ * @swagger
+ * /group/get-group-auto-delete-setting:
+ *   post:
+ *     summary: Get auto-delete setting for a group chat
+ *     description: Returns the auto-delete time (in minutes) for a group chat.
+ *     tags:
+ *       - Group
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - groupId
+ *             properties:
+ *               groupId:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *     responses:
+ *       200:
+ *         description: Auto-delete time returned.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 autoDeleteTime:
+ *                   type: integer
+ *                   nullable: true
+ *       404:
+ *         description: Group not found.
+ *       500:
+ *         description: Server error.
+ */
 router.post('/get-group-auto-delete-setting', authMiddleware, safeHandler('getGroupAutoDeleteSetting'));
+
+/**
+ * @swagger
+ * /group/set-group-auto-delete-setting:
+ *   post:
+ *     summary: Set auto-delete setting for a group chat
+ *     description: Sets the auto-delete time (in minutes) for a group chat.
+ *     tags:
+ *       - Group
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - groupId
+ *               - autoDeleteTime
+ *             properties:
+ *               groupId:
+ *                 type: string
+ *               autoDeleteTime:
+ *                 type: integer
+ *                 description: Minutes after which messages are auto-deleted.
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *     responses:
+ *       200:
+ *         description: Auto-delete time updated.
+ *       400:
+ *         description: Invalid input.
+ *       500:
+ *         description: Server error.
+ */
 router.post('/set-group-auto-delete-setting', authMiddleware, safeHandler('setGroupAutoDeleteSetting'));
+
+/**
+ * @swagger
+ * /group/list-group-saved-messages:
+ *   post:
+ *     summary: List all saved messages for a user in group chats
+ *     description: Returns all group chat messages saved by the user.
+ *     tags:
+ *       - Group
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *             properties:
+ *               userId:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *     responses:
+ *       200:
+ *         description: List of saved group messages.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 savedMessages:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       messageId:
+ *                         type: string
+ *                       content:
+ *                         type: string
+ *                       senderId:
+ *                         type: string
+ *                       receiverId:
+ *                         type: string
+ *                       sentAt:
+ *                         type: string
+ *                         format: date-time
+ *                       savedAt:
+ *                         type: string
+ *                         format: date-time
+ *                       groupId:
+ *                         type: string
+ *       404:
+ *         description: User not found.
+ *       500:
+ *         description: Server error.
+ */
 router.post('/list-group-saved-messages', authMiddleware, safeHandler('listGroupSavedMessages'));
+
+/**
+ * @swagger
+ * /group/delete-group-saved-message:
+ *   post:
+ *     summary: Delete a saved group message for a user
+ *     description: Deletes a specific saved group message for the user.
+ *     tags:
+ *       - Group
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - messageId
+ *               - groupId
+ *             properties:
+ *               userId:
+ *                 type: string
+ *               messageId:
+ *                 type: string
+ *               groupId:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *     responses:
+ *       200:
+ *         description: Saved group message deleted.
+ *       500:
+ *         description: Server error.
+ */
 router.post('/delete-group-saved-message', authMiddleware, safeHandler('deleteGroupSavedMessage'));
+
+/**
+ * @swagger
+ * /group/list-blocked-users:
+ *   post:
+ *     summary: List all blocked users for a user (group context)
+ *     description: Returns all users blocked by the user (for group chats).
+ *     tags:
+ *       - Group
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *             properties:
+ *               userId:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *     responses:
+ *       200:
+ *         description: List of blocked users.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 blockedUsers:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       username:
+ *                         type: string
+ *                       email:
+ *                         type: string
+ *                       fullName:
+ *                         type: string
+ *                       profilePic:
+ *                         type: string
+ *       404:
+ *         description: User not found.
+ *       500:
+ *         description: Server error.
+ */
 router.post('/list-blocked-users', authMiddleware, safeHandler('listBlockedUsers'));
+
+/**
+ * @swagger
+ * /group/list-restricted-users:
+ *   post:
+ *     summary: List all restricted users for a user (group context)
+ *     description: Returns all users restricted by the user (for group chats).
+ *     tags:
+ *       - Group
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *             properties:
+ *               userId:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *     responses:
+ *       200:
+ *         description: List of restricted users.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 restrictedUsers:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       username:
+ *                         type: string
+ *                       email:
+ *                         type: string
+ *                       fullName:
+ *                         type: string
+ *                       profilePic:
+ *                         type: string
+ *       404:
+ *         description: User not found.
+ *       500:
+ *         description: Server error.
+ */
 router.post('/list-restricted-users', authMiddleware, safeHandler('listRestrictedUsers'));
 
 module.exports = router;
