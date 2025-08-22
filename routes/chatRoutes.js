@@ -21,7 +21,9 @@ const {
   listSavedMessages,
   deleteSavedMessage,
   listBlockedUsers,
-  listRestrictedUsers
+  listRestrictedUsers,
+  fetchOnlineUsers,
+  fetchFriendsList
 } = require('../controllers/chatController');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/authMiddleware');
@@ -1035,5 +1037,119 @@ router.post('/list-blocked-users', authMiddleware, listBlockedUsers);
  *         description: Server error.
  */
 router.post('/list-restricted-users', authMiddleware, listRestrictedUsers);
+
+/**
+ * @swagger
+ * /chat/fetch-online-users:
+ *   post:
+ *     summary: Fetch all online users
+ *     description: Returns a list of all users who are currently online.
+ *     tags:
+ *       - Chat
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
+ *     responses:
+ *       200:
+ *         description: List of online users.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 onlineUsers:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       username:
+ *                         type: string
+ *                       email:
+ *                         type: string
+ *                       fullName:
+ *                         type: string
+ *                       profilePic:
+ *                         type: string
+ *                       isOnline:
+ *                         type: boolean
+ *                       lastSeen:
+ *                         type: string
+ *                         format: date-time
+ *       500:
+ *         description: Server error.
+ */
+router.post('/fetch-online-users', authMiddleware, fetchOnlineUsers);
+
+/**
+ * @swagger
+ * /chat/fetch-friends-list:
+ *   post:
+ *     summary: Fetch friends list for a user
+ *     description: Returns all friends for the user (from userAllFriends).
+ *     tags:
+ *       - Chat
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *             properties:
+ *               userId:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
+ *     responses:
+ *       200:
+ *         description: List of friends.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 friends:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       username:
+ *                         type: string
+ *                       email:
+ *                         type: string
+ *                       fullName:
+ *                         type: string
+ *                       profilePic:
+ *                         type: string
+ *                       isOnline:
+ *                         type: boolean
+ *                       lastSeen:
+ *                         type: string
+ *                         format: date-time
+ *       404:
+ *         description: User not found.
+ *       500:
+ *         description: Server error.
+ */
+router.post('/fetch-friends-list', authMiddleware, fetchFriendsList);
 
 module.exports = router;

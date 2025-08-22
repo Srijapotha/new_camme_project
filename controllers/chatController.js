@@ -490,3 +490,35 @@ exports.listRestrictedUsers = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// Fetch online users (expects an array of userIds to check)
+exports.fetchOnlineUsers = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    // Always return all online users
+    const users = await User.find({ isOnline: true }).select('username email fullName profilePic isOnline lastSeen');
+    res.json({ onlineUsers: users });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Fetch friends list (using userAllFriends)
+exports.fetchFriendsList = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { userId } = req.body;
+    const user = await User.findById(userId).populate('userAllFriends', 'username email fullName profilePic isOnline lastSeen');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    res.json({ friends: user.userAllFriends });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
