@@ -498,9 +498,18 @@ exports.fetchOnlineUsers = async (req, res) => {
     if (!verification.success) {
       return res.status(200).json(verification);
     }
-    // Always return all online users
-    const users = await User.find({ isOnline: true }).select('username email fullName profilePic isOnline lastSeen');
-    res.json({ onlineUsers: users });
+    const { userId } = req.body;
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+    // Get user's friends
+    const user = await User.findById(userId).populate('userAllFriends', 'username email fullName profilePic isOnline lastSeen');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Filter only online friends
+    const onlineUsers = (user.userAllFriends || []).filter(friend => friend.isOnline);
+
+    res.json({ onlineUsers });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

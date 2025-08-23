@@ -1053,6 +1053,8 @@ router.post('/list-restricted-users', authMiddleware, listRestrictedUsers);
  *           schema:
  *             type: object
  *             properties:
+ *               userId:
+ *                 type: string
  *               email:
  *                 type: string
  *                 format: email
