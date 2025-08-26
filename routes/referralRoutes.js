@@ -12,7 +12,7 @@ const {authMiddleware} = require('../middleware/authMiddleware');
 
 /**
  * @swagger
- * /api/referral/referral-stats:
+ * /referral/referral-stats:
  *   post:
  *     summary: Get referral statistics for a user
  *     description: Retrieves referral stats including points, referral link, and coin wallet.
@@ -64,7 +64,7 @@ router.post('/referral-stats', authMiddleware, getReferralStats);
 
 /**
  * @swagger
- * /api/referral/app-download-link:
+ * /referral/app-download-link:
  *   post:
  *     summary: Get app download URL with referral code
  *     description: Returns a shareable app download URL containing the user's referral code.
