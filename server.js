@@ -173,6 +173,17 @@ io.on('connection', (socket) => {
         }
     });
 
+    // group typing
+    socket.on('groupTyping', (data) => {
+    // data: { groupId, userId, isTyping }
+    // Broadcast to all group members except the sender
+    socket.to(data.groupId).emit('groupUserTyping', {
+        userId: data.userId,
+        groupId: data.groupId,
+        isTyping: data.isTyping,
+    });
+    });
+
     /**
      * @description Handles message read receipts.
      * @param {object} data - Contains messageId and senderId.
