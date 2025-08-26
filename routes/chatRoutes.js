@@ -144,7 +144,7 @@ router.post('/create-private-chat', authMiddleware, createPrivateChat);
 
 /**
  * @swagger
- * /api/v1/chat/messages:
+ * /chat/messages:
  *   post:
  *     summary: Get all messages for a chat
  *     tags:
