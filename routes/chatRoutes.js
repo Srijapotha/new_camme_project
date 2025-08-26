@@ -46,8 +46,6 @@ const { upload } = require('../config/cloudinary');
  *       - Chat
  *     security:
  *       - bearerAuth: []
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -193,8 +191,6 @@ router.post('/messages', authMiddleware, getChatMessages);
  *       - Chat
  *     security:
  *       - bearerAuth: []
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -256,8 +252,6 @@ router.post('/sendImageMessage', authMiddleware, upload.single('image'), sendIma
  *       - Chat
  *     security:
  *       - bearerAuth: []
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -304,8 +298,6 @@ router.post('/filter-messages', authMiddleware, filterMessages);
  *       - Chat
  *     security:
  *       - bearerAuth: []
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -350,8 +342,6 @@ router.post('/set-chat-pin', authMiddleware, setChatPin);
  *     description: Verifies the PIN entered for a private chat.
  *     tags:
  *       - Chat
- *     security:
- *       - bearerAuth: []
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -406,8 +396,6 @@ router.post('/verify-chat-pin', authMiddleware, verifyChatPin);
  *       - Chat
  *     security:
  *       - bearerAuth: []
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -446,8 +434,6 @@ router.post('/save-message', authMiddleware, saveMessage);
  *     description: Allows a user to block or unblock another user.
  *     tags:
  *       - Chat
- *     security:
- *       - bearerAuth: []
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -536,6 +522,8 @@ router.post('/restrict-user', authMiddleware, restrictUser);
  *     description: Returns all media messages (images, videos, files) shared in a chat, including sender profile and time.
  *     tags:
  *       - Chat
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -598,6 +586,8 @@ router.post('/shared-media', authMiddleware, getSharedMedia);
  *     description: Enable or disable notifications for a specific contact.
  *     tags:
  *       - Chat
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -641,6 +631,8 @@ router.post('/set-notification', authMiddleware, setNotification);
  *     description: Returns whether notifications are enabled for a specific contact.
  *     tags:
  *       - Chat
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -688,6 +680,8 @@ router.post('/get-notification', authMiddleware, getNotification);
  *     description: Sets a 4-digit PIN for a group chat for the user.
  *     tags:
  *       - Chat
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -733,6 +727,8 @@ router.post('/set-group-chat-pin', authMiddleware, setGroupChatPin);
  *     description: Verifies the PIN entered for a group chat.
  *     tags:
  *       - Chat
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -781,6 +777,8 @@ router.post('/verify-group-chat-pin', authMiddleware, verifyGroupChatPin);
  *     description: Returns the auto-delete time (in minutes) for a chat.
  *     tags:
  *       - Chat
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -824,6 +822,8 @@ router.post('/get-auto-delete-setting', authMiddleware, getAutoDeleteSetting);
  *     description: Sets the auto-delete time (in minutes) for a chat.
  *     tags:
  *       - Chat
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -863,6 +863,8 @@ router.post('/set-auto-delete-setting', authMiddleware, setAutoDeleteSetting);
  *     description: Returns all messages saved by the user.
  *     tags:
  *       - Chat
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -922,6 +924,8 @@ router.post('/list-saved-messages', authMiddleware, listSavedMessages);
  *     description: Deletes a specific saved message for the user.
  *     tags:
  *       - Chat
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -958,6 +962,8 @@ router.post('/delete-saved-message', authMiddleware, deleteSavedMessage);
  *     description: Returns all users blocked by the user.
  *     tags:
  *       - Chat
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -1011,6 +1017,8 @@ router.post('/list-blocked-users', authMiddleware, listBlockedUsers);
  *     description: Returns all users restricted by the user.
  *     tags:
  *       - Chat
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -1064,6 +1072,8 @@ router.post('/list-restricted-users', authMiddleware, listRestrictedUsers);
  *     description: Returns a list of all users who are currently online.
  *     tags:
  *       - Chat
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: false
  *       content:
@@ -1120,6 +1130,8 @@ router.post('/fetch-online-users', authMiddleware, fetchOnlineUsers);
  *     description: Returns all friends for the user (from userAllFriends).
  *     tags:
  *       - Chat
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:

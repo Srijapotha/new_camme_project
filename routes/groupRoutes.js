@@ -502,6 +502,8 @@ router.post('/get-notification', authMiddleware, safeHandler('getGroupNotificati
  *     description: Returns all media messages shared in a group chat, including sender profile and time.
  *     tags:
  *       - Group
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -563,6 +565,8 @@ router.post('/shared-media', authMiddleware, safeHandler('getGroupSharedMedia'))
  *     description: Allows a user to leave a group chat.
  *     tags:
  *       - Group
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -601,6 +605,8 @@ router.post('/exit', authMiddleware, safeHandler('exitGroup'));
  *     description: Sets a 4-digit PIN for a group chat for the user.
  *     tags:
  *       - Group
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -646,6 +652,8 @@ router.post('/set-group-pin', authMiddleware, safeHandler('setGroupPin'));
  *     description: Verifies the PIN entered for a group chat.
  *     tags:
  *       - Group
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -694,6 +702,8 @@ router.post('/verify-group-pin', authMiddleware, safeHandler('verifyGroupPin'));
  *     description: Returns the auto-delete time (in minutes) for a group chat.
  *     tags:
  *       - Group
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -737,6 +747,8 @@ router.post('/get-group-auto-delete-setting', authMiddleware, safeHandler('getGr
  *     description: Sets the auto-delete time (in minutes) for a group chat.
  *     tags:
  *       - Group
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -776,6 +788,8 @@ router.post('/set-group-auto-delete-setting', authMiddleware, safeHandler('setGr
  *     description: Returns all group chat messages saved by the user.
  *     tags:
  *       - Group
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -837,6 +851,8 @@ router.post('/list-group-saved-messages', authMiddleware, safeHandler('listGroup
  *     description: Deletes a specific saved group message for the user.
  *     tags:
  *       - Group
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -876,6 +892,8 @@ router.post('/delete-group-saved-message', authMiddleware, safeHandler('deleteGr
  *     description: Returns all users blocked by the user (for group chats).
  *     tags:
  *       - Group
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -929,6 +947,8 @@ router.post('/list-blocked-users', authMiddleware, safeHandler('listBlockedUsers
  *     description: Returns all users restricted by the user (for group chats).
  *     tags:
  *       - Group
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
