@@ -18,6 +18,8 @@ const {authMiddleware} = require('../middleware/authMiddleware');
  *     description: Retrieves referral stats including points, referral link, and coin wallet.
  *     tags:
  *       - Referral
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -68,6 +70,8 @@ router.post('/referral-stats', authMiddleware, getReferralStats);
  *     description: Returns a shareable app download URL containing the user's referral code.
  *     tags:
  *       - Referral
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:

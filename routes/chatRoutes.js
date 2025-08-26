@@ -46,6 +46,8 @@ const { upload } = require('../config/cloudinary');
  *       - Chat
  *     security:
  *       - bearerAuth: []
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -86,6 +88,8 @@ router.post('/search-chats', authMiddleware, searchChats);
  *     description: Creates a new private chat if one doesn't already exist between the two users.
  *     tags:
  *       - Chat
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -147,6 +151,8 @@ router.post('/create-private-chat', authMiddleware, createPrivateChat);
  *     summary: Get all messages for a chat
  *     tags:
  *       - Chat
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -185,6 +191,8 @@ router.post('/messages', authMiddleware, getChatMessages);
  *     description: Uploads an image to Cloudinary and sends it as a chat message.
  *     tags:
  *       - Chat
+ *     security:
+ *       - bearerAuth: []
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -248,6 +256,8 @@ router.post('/sendImageMessage', authMiddleware, upload.single('image'), sendIma
  *       - Chat
  *     security:
  *       - bearerAuth: []
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -294,6 +304,8 @@ router.post('/filter-messages', authMiddleware, filterMessages);
  *       - Chat
  *     security:
  *       - bearerAuth: []
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -338,6 +350,8 @@ router.post('/set-chat-pin', authMiddleware, setChatPin);
  *     description: Verifies the PIN entered for a private chat.
  *     tags:
  *       - Chat
+ *     security:
+ *       - bearerAuth: []
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -392,6 +406,8 @@ router.post('/verify-chat-pin', authMiddleware, verifyChatPin);
  *       - Chat
  *     security:
  *       - bearerAuth: []
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -430,6 +446,8 @@ router.post('/save-message', authMiddleware, saveMessage);
  *     description: Allows a user to block or unblock another user.
  *     tags:
  *       - Chat
+ *     security:
+ *       - bearerAuth: []
  *     security:
  *       - bearerAuth: []
  *     requestBody:

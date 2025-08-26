@@ -28,6 +28,8 @@ function safeHandler(fnName) {
  *     description: Allows an admin to create a new group chat with selected participants.
  *     tags:
  *       - Group
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -82,6 +84,8 @@ router.post('/create-group', authMiddleware, safeHandler('createGroup'));
  *     description: Allows the group admin to add a new member to the group.
  *     tags:
  *       - Group
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -125,6 +129,8 @@ router.post('/add-member', authMiddleware, safeHandler('addMember'));
  *     description: Allows the group admin to remove a member from the group.
  *     tags:
  *       - Group
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -215,6 +221,8 @@ router.post('/my-groups', authMiddleware, safeHandler('getMyGroups'));
  *     description: Allows the group admin to update group name, theme, or photo.
  *     tags:
  *       - Group
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -262,6 +270,8 @@ router.post('/update-profile', authMiddleware, safeHandler('updateGroupProfile')
  *     description: Filters messages in a group chat by year, month, and optionally day.
  *     tags:
  *       - Group
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -306,6 +316,8 @@ router.post('/filter-messages', authMiddleware, safeHandler('filterGroupMessages
  *     description: Allows the group admin to pin or unpin a message.
  *     tags:
  *       - Group
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -353,6 +365,8 @@ router.post('/pin-message', authMiddleware, safeHandler('pinGroupMessage'));
  *     description: Allows a user to save a message for later reference in a group chat.
  *     tags:
  *       - Group
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -394,6 +408,8 @@ router.post('/save-message', authMiddleware, safeHandler('saveGroupMessage'));
  *     description: Enable or disable notifications for a specific group.
  *     tags:
  *       - Group
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -437,6 +453,8 @@ router.post('/set-notification', authMiddleware, safeHandler('setGroupNotificati
  *     description: Returns whether notifications are enabled for a specific group.
  *     tags:
  *       - Group
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
