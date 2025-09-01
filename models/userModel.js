@@ -157,6 +157,18 @@ const userSchema = new mongoose.Schema({
     savedAt: { type: Date, default: Date.now }
   }],
   notificationSettings: { type: Map, of: Boolean }, // userId -> enabled
+  socialMedia: [
+    {
+      platform: { type: String, required: true }, // e.g., 'x', 'instagram', etc.
+      linked: { type: Boolean, default: false },
+      followers: { type: Number, default: 0 },
+      url: { type: String },
+      verifiedEmail: { type: Boolean, default: false },
+      verifiedPhone: { type: Boolean, default: false },
+      lastChecked: { type: Date },
+      tier: { type: String }
+    }
+  ],
 },)
 
 // { strict: false }

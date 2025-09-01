@@ -14,6 +14,7 @@ const authRoutes = require("./routes/userAuthRoutes");
 const chatRoutes = require('./routes/chatRoutes');
 const groupRoutes = require('./routes/groupRoutes');
 const referralRoutes = require('./routes/referralRoutes');
+const profileRoutes = require('./routes/profileRoutes');
 
 // Model Imports (make sure these exist)
 const Message = require("./models/message");
@@ -260,6 +261,7 @@ io.on('connection', (socket) => {
 
 // Express Middleware and Route setup
 app.use(cors({ origin: "*", credentials: true }));
+// capture raw body for debugging malformed JSON payloads
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 swaggerSetup(app);
@@ -272,6 +274,25 @@ app.use("/api/v1/user", authRoutes);
 app.use('/api/v1/chat', chatRoutes);
 app.use('/api/v1/group', groupRoutes);
 app.use('/api/v1/referral', referralRoutes);
+// Profile routes with specific JSON parsing
+app.use('/api/v1/profile', express.json({
+  strict: false,
+  verify: (req, res, buf, encoding) => {
+    if (buf && buf.length) {
+      try {
+        JSON.parse(buf.toString(encoding));
+      } catch (e) {
+        console.error('JSON Parse Error:', e.message);
+        res.status(400).json({
+          error: 'Invalid JSON in request',
+          details: e.message,
+          location: '/api/v1/profile'
+        });
+        throw new Error('Invalid JSON');
+      }
+    }
+  }
+}), profileRoutes);
 
 app.get("/", (req, res) => {
     res.send("Welcome to the Cam Me Application API Documentation");
