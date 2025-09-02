@@ -15,6 +15,7 @@ const chatRoutes = require('./routes/chatRoutes');
 const groupRoutes = require('./routes/groupRoutes');
 const referralRoutes = require('./routes/referralRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const notificationSettingsRoutes = require('./routes/notificationSettings');
 
 // Model Imports (make sure these exist)
 const Message = require("./models/message");
@@ -293,6 +294,7 @@ app.use('/api/v1/profile', express.json({
     }
   }
 }), profileRoutes);
+app.use('/api/v1/notification-settings', notificationSettingsRoutes);
 
 app.get("/", (req, res) => {
     res.send("Welcome to the Cam Me Application API Documentation");
