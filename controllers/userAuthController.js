@@ -7057,35 +7057,293 @@ exports.getShareablePostUrl = async (req, res) => {
   }
 };
 
-exports.toggleSavePost = async (req, res) => {
+// exports.toggleSavePost = async (req, res) => {
+//   try {
+//      const verification = await verifyUserTokenAndEmail(req);
+//         if (!verification.success) {
+//             return res.status(200).json(verification);
+//         }
+//     const { postId } = req.body;
+//     const userId = req.user.userId;
+
+//     const post = await Postcreate.findById(postId);
+//     if (!post) {
+//       return res.status(404).json({ success: false, message: 'Post not found' });
+//     }
+
+//     const user = await User.findById(userId);
+
+//     const isSaved = user.savedPosts.includes(postId);
+
+//     if (isSaved) {
+//       user.savedPosts.pull(postId);
+//       await user.save();
+//       return res.status(200).json({ success: true, message: 'Post unsaved successfully' });
+//     } else {
+//       user.savedPosts.push(postId);
+//       await user.save();
+//       return res.status(200).json({ success: true, message: 'Post saved successfully' });
+//     }
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, message: 'Server error' });
+//   }
+// };
+
+exports.toggleSaveItem = async (req, res) => {
   try {
-     const verification = await verifyUserTokenAndEmail(req);
-        if (!verification.success) {
-            return res.status(200).json(verification);
-        }
-    const { postId } = req.body;
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+
+    const { postId, type } = req.body;
     const userId = req.user.userId;
 
-    const post = await Postcreate.findById(postId);
-    if (!post) {
-      return res.status(404).json({ success: false, message: 'Post not found' });
+    const allowedTypes = ['post', 'photograph', 'filter'];
+
+    if (!allowedTypes.includes(type)) {
+      return res.status(400).json({ success: false, message: 'Invalid type' });
     }
 
     const user = await User.findById(userId);
 
-    const isSaved = user.savedPosts.includes(postId);
+    const existingIndex = user.savedItems.findIndex(
+      (saved) => saved.type === type && saved.item.toString() === postId
+    );
 
-    if (isSaved) {
-      user.savedPosts.pull(postId);
+    if (existingIndex !== -1) {
+      // Already saved — remove
+      user.savedItems.splice(existingIndex, 1);
       await user.save();
-      return res.status(200).json({ success: true, message: 'Post unsaved successfully' });
+      return res.status(200).json({ success: true, message: `${type} unsaved successfully` });
     } else {
-      user.savedPosts.push(postId);
+      // Save the item
+      user.savedItems.push({
+        type,
+        item: postId,
+        savedAt: new Date()
+      });
       await user.save();
-      return res.status(200).json({ success: true, message: 'Post saved successfully' });
+      return res.status(200).json({ success: true, message: `${type} saved successfully` });
     }
+
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+
+// exports.getSavedItems = async (req, res) => {
+//   try {
+//     const verification = await verifyUserTokenAndEmail(req);
+//     if (!verification.success) {
+//       return res.status(200).json(verification);
+//     }
+
+//     const { type, savedAt } = req.body;
+//     const userId = req.user.userId;
+
+//     const allowedTypes = ['post', 'photograph', 'filter'];
+//     if (!type || !allowedTypes.includes(type)) {
+//       return res.status(400).json({ success: false, message: 'Invalid or missing type' });
+//     }
+
+//     const user = await User.findById(userId);
+//     if (!user) {
+//       return res.status(404).json({ success: false, message: 'User not found' });
+//     }
+
+//     // Filter saved items by type
+//     let savedItems = user.savedItems.filter(item => item.type === type);
+
+//     // Filter by savedAt only if provided and non-empty
+//     if (savedAt && savedAt.trim() !== '') {
+//       const savedAfter = new Date(savedAt);
+//       if (isNaN(savedAfter.getTime())) {
+//         return res.status(400).json({ success: false, message: 'Invalid savedAt date' });
+//       }
+
+//       savedItems = savedItems.filter(item => new Date(item.savedAt) > savedAfter);
+//     }
+
+//     // Sort by savedAt descending
+//     savedItems.sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
+
+//     return res.status(200).json({
+//       success: true,
+//       data: savedItems,
+//     });
+
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({ success: false, message: 'Server error' });
+//   }
+// };
+
+exports.getSavedItems = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+
+    const { type, savedAt } = req.body;
+    const userId = req.user.userId;
+
+    const allowedTypes = ['post', 'photograph', 'filter'];
+    if (!type || !allowedTypes.includes(type)) {
+      return res.status(400).json({ success: false, message: 'Invalid or missing type' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Filter saved items by type
+    let savedItems = user.savedItems.filter(item => item.type === type);
+
+    // Optional savedAt filter
+    if (savedAt && savedAt.trim() !== '') {
+      const savedAfter = new Date(savedAt);
+      if (isNaN(savedAfter.getTime())) {
+        return res.status(400).json({ success: false, message: 'Invalid savedAt date' });
+      }
+      savedItems = savedItems.filter(item => new Date(item.savedAt) > savedAfter);
+    }
+
+    // Sort by savedAt
+    savedItems.sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
+
+    // 🔍 For type 'post', fetch posts and add imageUrl
+    if (type === 'post') {
+      const postIds = savedItems.map(item => item.item);
+      const posts = await Postcreate.find({ _id: { $in: postIds } })
+        .select('_id content.imageUrl');
+
+      // Map posts by _id for quick lookup
+      const postMap = {};
+      posts.forEach(post => {
+        postMap[post._id.toString()] = post.content?.imageUrl || [];
+      });
+
+      // Attach imageUrl to each savedItem
+      savedItems = savedItems.map(item => ({
+        ...item.toObject(),
+        imageUrl: postMap[item.item.toString()] || []
+      }));
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: savedItems,
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Get profile by id (expects { userId, email, token } in body)
+exports.getProfile = async (req, res) => {    
+  try { 
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) return res.status(200).json(verification);
+
+    const { userId, email } = req.body;
+    if (!userId || !email) return res.status(400).json({ success: false, message: 'userId and email required in body' });
+
+    // Fetch mongoose document (not lean) so we can record visitor
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (user.email !== email) return res.status(403).json({ success: false, message: 'Provided email does not match user' });
+
+    // Record visitor if the requester is different from the profile owner
+    try {
+      const viewerId = req.user && req.user.userId ? req.user.userId.toString() : null;
+      const targetId = userId.toString();
+
+      if (viewerId && viewerId !== targetId) {
+        user.profileVisitors = user.profileVisitors || [];
+
+        // Check if visitor already exists -> update visitedAt, else push
+        const existing = user.profileVisitors.find(v => v.visitorId.toString() === viewerId);
+        const now = new Date();
+        if (existing) {
+          existing.visitedAt = now;
+        } else {
+          user.profileVisitors.push({ visitorId: viewerId, visitedAt: now });
+        }
+
+        // Optional: keep only last 200 visitors
+        if (user.profileVisitors.length > 200) {
+          // sort descending and slice to keep latest 200
+          user.profileVisitors.sort((a, b) => new Date(b.visitedAt) - new Date(a.visitedAt));
+          user.profileVisitors = user.profileVisitors.slice(0, 200);
+        }
+
+        await user.save();
+      }
+    } catch (recErr) {
+      // Don't fail the profile fetch if updating visitor fails; just log
+      console.error('Error recording profile visitor:', recErr);
+    }
+
+    // Return a plain object (avoid leaking internal fields as needed)
+    const safeUser = user.toObject();
+    return res.json({ success: true, user: safeUser });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// New: fetch profile visitors (returns list of visitors with basic info)
+exports.getProfileVisitors = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) return res.status(200).json(verification);
+
+    const { userId, email, limit = 50, page = 1 } = req.body;
+    if (!userId || !email) return res.status(400).json({ success: false, message: 'userId and email required in body' });
+
+    const user = await User.findById(userId).populate({
+      path: 'profileVisitors.visitorId',
+      select: 'fullName userName profilePic'
+    });
+
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (user.email !== email) return res.status(403).json({ success: false, message: 'Provided email does not match user' });
+
+    // Map and sort visitors by visitedAt desc
+    const visitors = (user.profileVisitors || [])
+      .map(v => ({
+        visitorId: v.visitorId ? v.visitorId._id : null,
+        fullName: v.visitorId ? v.visitorId.fullName : null,
+        userName: v.visitorId ? v.visitorId.userName : null,
+        profilePic: v.visitorId ? v.visitorId.profilePic : null,
+        visitedAt: v.visitedAt
+      }))
+      .sort((a, b) => new Date(b.visitedAt) - new Date(a.visitedAt));
+
+    // pagination
+    const l = Math.max(1, parseInt(limit, 10));
+    const p = Math.max(1, parseInt(page, 10));
+    const start = (p - 1) * l;
+    const paged = visitors.slice(start, start + l);
+
+    return res.status(200).json({ success: true, total: visitors.length, page: p, limit: l, visitors: paged });
+  } catch (err) {
+    console.error('Error in getProfileVisitors:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+
+
+
+
+

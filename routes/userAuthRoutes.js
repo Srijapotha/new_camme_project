@@ -88,6 +88,10 @@ const {
   approveOrRejectBlackCoin,
   giveReplayToCommentPost,
   getAllCommentsAndReplies,
+  getSavedItems,
+  toggleSaveItem,
+  getProfileVisitors,
+  getProfile
 } = require("../controllers/userAuthController")
 const { authMiddleware } = require('../middleware/authMiddleware');
 const { uploadd } = require("../middleware/multer");
@@ -4640,7 +4644,7 @@ router.post("/sendLiveLocationWithInyourFriends",authMiddleware,sendLiveLocation
 
 router.post("/friendsInMessingIfOnline",authMiddleware,friendsInMessingIfOnline);
 
-router.post("/getMessages",authMiddleware,getMessages);
+// router.post("/getMessages",authMiddleware,getMessages);
 
 router.post("/markMsgAsRead",authMiddleware,markMsgAsRead)
 
@@ -4852,6 +4856,9 @@ router.post('/share-url', authMiddleware, getShareablePostUrl);
  *                 type: string
  *                 example: "abc123"
  *                 description: The ID of the post to save or unsave.
+ *               type:
+ *                 type: string
+ *                 example: post/photograph/filter
  *               email:
  *                 type: string
  *                 format: email
@@ -4879,7 +4886,80 @@ router.post('/share-url', authMiddleware, getShareablePostUrl);
  *       500:
  *         description: Internal server error.
  */
-router.put('/save', authMiddleware, toggleSavePost);
+router.put('/save', authMiddleware, toggleSaveItem);
+
+/**
+ * @swagger
+ * /user/saved-items:
+ *   post:
+ *     summary: Get saved items by type
+ *     description: Retrieve all saved items of a specific type (post, photograph, filter), optionally filtered by savedAt timestamp.
+ *     tags:
+ *       - Posts
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - type
+ *             properties:
+ *               type:
+ *                 type: string
+ *                 enum: [post, photograph, filter]
+ *                 example: post
+ *                 description: The type of saved item to retrieve.
+ *               savedAt:
+ *                 type: string
+ *                 format: date-time
+ *                 example: "2025-08-01T00:00:00.000Z"
+ *                 description: (Optional) Only return items saved after this timestamp.
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: JWT token for authentication
+ *                 example: 6699aabbccddeeff0011223344556677
+ *     responses:
+ *       200:
+ *         description: List of saved items.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       type:
+ *                         type: string
+ *                         example: post
+ *                       item:
+ *                         type: object
+ *                         description: The full populated item document.
+ *                       savedAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-09-02T12:00:00.000Z"
+ *       400:
+ *         description: Invalid type or bad request.
+ *       404:
+ *         description: User not found.
+ *       500:
+ *         description: Internal server error.
+ */
+router.post('/saved-items', authMiddleware, getSavedItems);
+
 
 /**
  * @swagger
@@ -5152,6 +5232,128 @@ router.post('/getAllPendingBlackCoins', authMiddleware, getAllPendingBlackCoins)
  */
 router.post('/approveOrRejectBlackCoin', authMiddleware, approveOrRejectBlackCoin);
 
+ 
+/**
+ * @swagger
+ * /user/getProfileVisitors:
+ *   post:
+ *     summary: Get list of users who visited the specified user's profile
+ *     tags:
+ *       - Profile
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - email
+ *               - token
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: The ID of the profile owner whose visitors are requested
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Requester's email (must match authenticated user's email)
+ *               token:
+ *                 type: string
+ *                 description: JWT token (must match Authorization header)
+ *               limit:
+ *                 type: integer
+ *                 description: Number of visitor records per page (optional, default 50)
+ *               page:
+ *                 type: integer
+ *                 description: Page number (optional, default 1)
+ *     responses:
+ *       200:
+ *         description: Visitor list returned
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 total:
+ *                   type: integer
+ *                 page:
+ *                   type: integer
+ *                 limit:
+ *                   type: integer
+ *                 visitors:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       visitorId:
+ *                         type: string
+ *                       fullName:
+ *                         type: string
+ *                       userName:
+ *                         type: string
+ *                       profilePic:
+ *                         type: string
+ *                       visitedAt:
+ *                         type: string
+ *                         format: date-time
+ *       400:
+ *         description: Missing required fields (userId, email, or token)
+ *       401:
+ *         description: Unauthorized - token mismatch or invalid
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error while fetching visitors
+ */
+router.post("/getProfileVisitors", authMiddleware, getProfileVisitors);
 
+/**
+ * @swagger
+ * /user/get-profile:
+ *   post:
+ *     summary: Get user profile by ID (records visitor if requester is different)
+ *     tags:
+ *       - Profile
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - email
+ *               - token
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: ID of the profile to fetch
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Requester's email (must match the authenticated user's email)
+ *               token:
+ *                 type: string
+ *                 description: JWT token (must match the Authorization header)
+ *     responses:
+ *       200:
+ *         description: Profile fetched successfully
+ *       400:
+ *         description: Missing required fields
+ *       401:
+ *         description: Unauthorized (token/email mismatch)
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
+router.post("/get-profile", authMiddleware, getProfile);
 
 module.exports = router;                       

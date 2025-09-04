@@ -148,6 +148,24 @@ const userSchema = new mongoose.Schema({
       ref: 'Postcreate'
     }
   ],
+  savedItems: [
+  {
+    type: {
+      type: String,
+      enum: ['post', 'photograph', 'filter'],
+      required: true
+    },
+    item: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    //   refPath: 'savedItems.type'  // This makes it dynamic based on the type
+    },
+    savedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }
+],
   referralId: { type: String, unique: true },
   blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   restrictedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
@@ -167,6 +185,12 @@ const userSchema = new mongoose.Schema({
       verifiedPhone: { type: Boolean, default: false },
       lastChecked: { type: Date },
       tier: { type: String }
+    }
+  ],
+  profileVisitors: [
+    {
+      visitorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+      visitedAt: { type: Date, default: Date.now }
     }
   ],
 },)
