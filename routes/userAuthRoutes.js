@@ -91,14 +91,17 @@ const {
   getSavedItems,
   toggleSaveItem,
   getProfileVisitors,
-  getProfile
+  getProfile,
+  updateAutoDeleteChat,
+  getAutoDeleteChat,
+  updateHideMutualFriends,
+  getHideMutualFriends
 } = require("../controllers/userAuthController")
 const { authMiddleware } = require('../middleware/authMiddleware');
 const { uploadd } = require("../middleware/multer");
 const checkBlacklist = require('../middleware/BlackListToken');
 const { upload } = require("../config/cloudinary");
 const { addComment, addReply, getComments, likeComment } = require('../controllers/commentController');
-const {submitReport, getPendingReports, resolveReport} = require('../controllers/reportController');
 const {getInstagramQrCode} = require('../controllers/qrController');
 
 const router = express.Router();
@@ -4960,142 +4963,6 @@ router.put('/save', authMiddleware, toggleSaveItem);
  */
 router.post('/saved-items', authMiddleware, getSavedItems);
 
-
-/**
- * @swagger
- * /user/reports:
- *   post:
- *     summary: Submit a report
- *     description: Allows a user to report a post or comment for inappropriate content.
- *     tags:
- *       - Reports
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - reporter
- *               - reason
- *             properties:
- *               reporter:
- *                 type: string
- *                 description: ID of the user reporting the content.
- *               reportedPost:
- *                 type: string
- *                 description: ID of the post being reported (optional).
- *               reportedComment:
- *                 type: string
- *                 description: ID of the comment being reported (optional).
- *               reason:
- *                 type: string
- *                 enum: [spam, hate_speech, nudity, violence, other]
- *                 description: Reason for reporting.
-*               email:
- *                 type: string
- *                 format: email
- *                 example: user@example.com
- *               token:
- *                 type: string
- *                 description: JWT token for authentication
- *                 example: 6699aabbccddeeff0011223344556677
- *     responses:
- *       201:
- *         description: Report submitted successfully.
- *       400:
- *         description: Invalid input.
- *       500:
- *         description: Internal server error.
- */
-router.post('/reports', authMiddleware, submitReport);
-
-/**
- * @swagger
- * /user/reports/pending:
- *   get:
- *     summary: Get pending reports
- *     description: Retrieves all reports with status 'pending'.
- *     tags:
- *       - Reports
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *                 example: user@example.com
- *               token:
- *                 type: string
- *                 description: JWT token for authentication
- *                 example: 6699aabbccddeeff0011223344556677
- *     responses:
- *       200:
- *         description: List of pending reports.
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Report'
- *       500:
- *         description: Internal server error.
- */
-router.post('/reports/pending', authMiddleware, getPendingReports);
-
-/**
- * @swagger
- * /user/reports:
- *   put:
- *     summary: Update report status
- *     description: Allows an admin to update the status of a report.
- *     tags:
- *       - Reports
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - id
- *               - status
- *             properties:
- *               id:
- *                 type: string
- *                 example: "report123"
- *                 description: ID of the report to update.
- *               status:
- *                 type: string
- *                 enum: [pending, under_review, resolved, dismissed]
- *                 description: New status of the report.
- *               email:
- *                 type: string
- *                 format: email
- *                 example: user@example.com
- *               token:
- *                 type: string
- *                 description: JWT token for authentication
- *                 example: 6699aabbccddeeff0011223344556677
- *     responses:
- *       200:
- *         description: Report updated successfully.
- *       404:
- *         description: Report not found.
- *       500:
- *         description: Internal server error.
- */
-router.put('/reports', authMiddleware, resolveReport);
-
 /**
  * @swagger
  * /user/qrCode:
@@ -5355,5 +5222,144 @@ router.post("/getProfileVisitors", authMiddleware, getProfileVisitors);
  *         description: Server error
  */
 router.post("/get-profile", authMiddleware, getProfile);
+
+// Update autoDeleteChat
+router.post('/autoDeleteChat', updateAutoDeleteChat);
+/**
+ * @swagger
+ * /user/autoDeleteChat:
+ *   post:
+ *     summary: Update or get autoDeleteChat setting for the user
+ *     tags:
+ *       - Privacy
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - token
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *               autoDeleteChat:
+ *                 type: string
+ *                 enum: [24h, 1w, 30d, never]
+ *                 example: 24h
+ *     responses:
+ *       200:
+ *         description: Success
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Unauthorized
+ */
+
+// Verify (get) autoDeleteChat
+router.post('/getAutoDeleteChat', getAutoDeleteChat);
+/**
+ * @swagger
+ * /user/getAutoDeleteChat:
+ *   post:
+ *     summary: Get current autoDeleteChat setting for the user
+ *     tags:
+ *       - Privacy
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - token
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *     responses:
+ *       200:
+ *         description: Success
+ *       401:
+ *         description: Unauthorized
+ */
+
+// Update hideMutualFriends
+router.post('/hideMutualFriends', updateHideMutualFriends);
+/**
+ * @swagger
+ * /user/hideMutualFriends:
+ *   post:
+ *     summary: Update or get hideMutualFriends setting for the user
+ *     tags:
+ *       - Privacy
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - token
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *               hideMutualFriends:
+ *                 type: boolean
+ *                 example: true
+ *     responses:
+ *       200:
+ *         description: Success
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Unauthorized
+ */
+
+// Verify (get) hideMutualFriends
+router.post('/getHideMutualFriends', getHideMutualFriends);
+/**
+ * @swagger
+ * /user/getHideMutualFriends:
+ *   post:
+ *     summary: Get current hideMutualFriends setting for the user
+ *     tags:
+ *       - Privacy
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - token
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *     responses:
+ *       200:
+ *         description: Success
+ *       401:
+ *         description: Unauthorized
+ */
 
 module.exports = router;                       

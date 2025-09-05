@@ -42,7 +42,7 @@ const transPorter = nodeMailer.createTransport({
 const generateOtp = () => Math.floor(1000 + Math.random() * 9000).toString();
 
 function generateReferralId() {
-  return 'REF' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    return 'REF' + Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
 exports.register = async (req, res) => {
@@ -64,23 +64,23 @@ exports.register = async (req, res) => {
             });
         }
 
-         let referralId;
-            do {
-              referralId = generateReferralId();
-            } while (await User.findOne({ referralId }));
-            if (referredBy) {
-              const referrer = await User.findOne({ referralId: referredBy });
-              if (referrer) {
+        let referralId;
+        do {
+            referralId = generateReferralId();
+        } while (await User.findOne({ referralId }));
+        if (referredBy) {
+            const referrer = await User.findOne({ referralId: referredBy });
+            if (referrer) {
                 await User.findByIdAndUpdate(referrer._id, {
-                  $inc: {
-                    scorePoints: 250,
-                    'coins.tedGold': 50,
-                    'coins.tedSilver': 35,
-                    'coins.tedBrown': 15
-                  }
+                    $inc: {
+                        scorePoints: 250,
+                        'coins.tedGold': 50,
+                        'coins.tedSilver': 35,
+                        'coins.tedBrown': 15
+                    }
                 });
-              }
             }
+        }
 
         const otp = generateOtp();
         const otpExpires = Date.now() + 2 * 60 * 1000; // 2 minutes
@@ -3547,7 +3547,7 @@ exports.giveReplayToCommentPost = async (req, res) => {
 
 exports.getAllCommentsAndReplies = async (req, res) => {
     try {
-        
+
         const verification = await verifyUserTokenAndEmail(req);
         if (!verification.success) {
             return res.status(200).json(verification);
@@ -4891,9 +4891,9 @@ exports.giveTedBlackCoin = async (req, res) => {
                     await postCreator.save();
                     await updatedPost.save();
                     console.log("Complited giving coin giveTedBlackCoin")
-                } else if(disagreePercentage >= 25) {
+                } else if (disagreePercentage >= 25) {
                     tedBlackRecord.status = "Reject TedBlack";
-                }else {
+                } else {
                     await ContentMapping.create({
                         postId: updatedPost._id,
                         postUserId: updatedPost.userId,
@@ -4929,9 +4929,9 @@ exports.giveTedBlackCoin = async (req, res) => {
 exports.getAllPendingBlackCoins = async (req, res) => {
     try {
         const verification = await verifyUserTokenAndEmail(req);
-              if (!verification.success) {
-                return res.status(200).json(verification);
-              }
+        if (!verification.success) {
+            return res.status(200).json(verification);
+        }
         const pending = await ContentMapping.find({ status: 'pending' })
             .populate('postId')
             .populate('postUserId')
@@ -4945,9 +4945,9 @@ exports.getAllPendingBlackCoins = async (req, res) => {
 exports.approveOrRejectBlackCoin = async (req, res) => {
     try {
         const verification = await verifyUserTokenAndEmail(req);
-              if (!verification.success) {
-                return res.status(200).json(verification);
-              }
+        if (!verification.success) {
+            return res.status(200).json(verification);
+        }
         const { mappingId, action } = req.body; // action: 'approve' or 'reject'
         const ContentMapping = require('../models/contentMapping');
         const mapping = await ContentMapping.findById(mappingId);
@@ -7021,40 +7021,40 @@ exports.FetchPhotoGraphyForHome = async (req, res) => {
 }
 
 exports.getShareablePostUrl = async (req, res) => {
-  try {
-    const verification = await verifyUserTokenAndEmail(req);
+    try {
+        const verification = await verifyUserTokenAndEmail(req);
         if (!verification.success) {
             return res.status(200).json(verification);
         }
 
-    const { postId } = req.body;
+        const { postId } = req.body;
 
-    const post = await Postcreate.findById(postId);
+        const post = await Postcreate.findById(postId);
 
-    const userId = req.user.userId;
+        const userId = req.user.userId;
 
-    const user = await User.findById(userId).populate('userAllFriends', '_id fullName userName profilePic');
+        const user = await User.findById(userId).populate('userAllFriends', '_id fullName userName profilePic');
 
-    if (!user) {
-        return res.status(200).json({ success: false, message: "User not found" });
+        if (!user) {
+            return res.status(200).json({ success: false, message: "User not found" });
+        }
+
+        if (!post) {
+            return res.status(404).json({ success: false, message: 'Post not found' });
+        }
+
+        const shareUrl = `https://yourdomain.com/posts/${postId}`;
+
+        res.status(200).json({
+            success: true,
+            shareUrl,
+            message: 'Shareable URL generated successfully',
+            friends: user.userAllFriends // Add the user's friends to the response
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
-
-    if (!post) {
-      return res.status(404).json({ success: false, message: 'Post not found' });
-    }
-
-    const shareUrl = `https://yourdomain.com/posts/${postId}`;
-
-    res.status(200).json({
-      success: true,
-      shareUrl,
-      message: 'Shareable URL generated successfully',
-      friends: user.userAllFriends // Add the user's friends to the response
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
 };
 
 // exports.toggleSavePost = async (req, res) => {
@@ -7091,47 +7091,47 @@ exports.getShareablePostUrl = async (req, res) => {
 // };
 
 exports.toggleSaveItem = async (req, res) => {
-  try {
-    const verification = await verifyUserTokenAndEmail(req);
-    if (!verification.success) {
-      return res.status(200).json(verification);
+    try {
+        const verification = await verifyUserTokenAndEmail(req);
+        if (!verification.success) {
+            return res.status(200).json(verification);
+        }
+
+        const { postId, type } = req.body;
+        const userId = req.user.userId;
+
+        const allowedTypes = ['post', 'photograph', 'filter'];
+
+        if (!allowedTypes.includes(type)) {
+            return res.status(400).json({ success: false, message: 'Invalid type' });
+        }
+
+        const user = await User.findById(userId);
+
+        const existingIndex = user.savedItems.findIndex(
+            (saved) => saved.type === type && saved.item.toString() === postId
+        );
+
+        if (existingIndex !== -1) {
+            // Already saved — remove
+            user.savedItems.splice(existingIndex, 1);
+            await user.save();
+            return res.status(200).json({ success: true, message: `${type} unsaved successfully` });
+        } else {
+            // Save the item
+            user.savedItems.push({
+                type,
+                item: postId,
+                savedAt: new Date()
+            });
+            await user.save();
+            return res.status(200).json({ success: true, message: `${type} saved successfully` });
+        }
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: 'Server error' });
     }
-
-    const { postId, type } = req.body;
-    const userId = req.user.userId;
-
-    const allowedTypes = ['post', 'photograph', 'filter'];
-
-    if (!allowedTypes.includes(type)) {
-      return res.status(400).json({ success: false, message: 'Invalid type' });
-    }
-
-    const user = await User.findById(userId);
-
-    const existingIndex = user.savedItems.findIndex(
-      (saved) => saved.type === type && saved.item.toString() === postId
-    );
-
-    if (existingIndex !== -1) {
-      // Already saved — remove
-      user.savedItems.splice(existingIndex, 1);
-      await user.save();
-      return res.status(200).json({ success: true, message: `${type} unsaved successfully` });
-    } else {
-      // Save the item
-      user.savedItems.push({
-        type,
-        item: postId,
-        savedAt: new Date()
-      });
-      await user.save();
-      return res.status(200).json({ success: true, message: `${type} saved successfully` });
-    }
-
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ success: false, message: 'Server error' });
-  }
 };
 
 
@@ -7183,116 +7183,208 @@ exports.toggleSaveItem = async (req, res) => {
 // };
 
 exports.getSavedItems = async (req, res) => {
-  try {
-    const verification = await verifyUserTokenAndEmail(req);
-    if (!verification.success) {
-      return res.status(200).json(verification);
+    try {
+        const verification = await verifyUserTokenAndEmail(req);
+        if (!verification.success) {
+            return res.status(200).json(verification);
+        }
+
+        const { type, savedAt } = req.body;
+        const userId = req.user.userId;
+
+        const allowedTypes = ['post', 'photograph', 'filter'];
+        if (!type || !allowedTypes.includes(type)) {
+            return res.status(400).json({ success: false, message: 'Invalid or missing type' });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Filter saved items by type
+        let savedItems = user.savedItems.filter(item => item.type === type);
+
+        // Optional savedAt filter
+        if (savedAt && savedAt.trim() !== '') {
+            const savedAfter = new Date(savedAt);
+            if (isNaN(savedAfter.getTime())) {
+                return res.status(400).json({ success: false, message: 'Invalid savedAt date' });
+            }
+            savedItems = savedItems.filter(item => new Date(item.savedAt) > savedAfter);
+        }
+
+        // Sort by savedAt
+        savedItems.sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
+
+        // 🔍 For type 'post', fetch posts and add imageUrl
+        if (type === 'post') {
+            const postIds = savedItems.map(item => item.item);
+            const posts = await Postcreate.find({ _id: { $in: postIds } })
+                .select('_id content.imageUrl');
+
+            // Map posts by _id for quick lookup
+            const postMap = {};
+            posts.forEach(post => {
+                postMap[post._id.toString()] = post.content?.imageUrl || [];
+            });
+
+            // Attach imageUrl to each savedItem
+            savedItems = savedItems.map(item => ({
+                ...item.toObject(),
+                imageUrl: postMap[item.item.toString()] || []
+            }));
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: savedItems,
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: 'Server error' });
     }
-
-    const { type, savedAt } = req.body;
-    const userId = req.user.userId;
-
-    const allowedTypes = ['post', 'photograph', 'filter'];
-    if (!type || !allowedTypes.includes(type)) {
-      return res.status(400).json({ success: false, message: 'Invalid or missing type' });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-
-    // Filter saved items by type
-    let savedItems = user.savedItems.filter(item => item.type === type);
-
-    // Optional savedAt filter
-    if (savedAt && savedAt.trim() !== '') {
-      const savedAfter = new Date(savedAt);
-      if (isNaN(savedAfter.getTime())) {
-        return res.status(400).json({ success: false, message: 'Invalid savedAt date' });
-      }
-      savedItems = savedItems.filter(item => new Date(item.savedAt) > savedAfter);
-    }
-
-    // Sort by savedAt
-    savedItems.sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
-
-    // 🔍 For type 'post', fetch posts and add imageUrl
-    if (type === 'post') {
-      const postIds = savedItems.map(item => item.item);
-      const posts = await Postcreate.find({ _id: { $in: postIds } })
-        .select('_id content.imageUrl');
-
-      // Map posts by _id for quick lookup
-      const postMap = {};
-      posts.forEach(post => {
-        postMap[post._id.toString()] = post.content?.imageUrl || [];
-      });
-
-      // Attach imageUrl to each savedItem
-      savedItems = savedItems.map(item => ({
-        ...item.toObject(),
-        imageUrl: postMap[item.item.toString()] || []
-      }));
-    }
-
-    return res.status(200).json({
-      success: true,
-      data: savedItems,
-    });
-
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ success: false, message: 'Server error' });
-  }
 };
 
 // Get profile by id (expects { userId, email, token } in body)
-exports.getProfile = async (req, res) => {    
-  try { 
+// exports.getProfile = async (req, res) => {
+//     try {
+//         const verification = await verifyUserTokenAndEmail(req);
+//         if (!verification.success) return res.status(200).json(verification);
+
+//         const { userId, email } = req.body;
+//         if (!userId || !email) return res.status(400).json({ success: false, message: 'userId and email required in body' });
+
+//         // Fetch mongoose document (not lean) so we can record visitor
+//         const user = await User.findById(userId);
+//         if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+//         if (user.email !== email) return res.status(403).json({ success: false, message: 'Provided email does not match user' });
+
+//         // Record visitor if the requester is different from the profile owner
+//         try {
+//             const viewerId = req.user && req.user.userId ? req.user.userId.toString() : null;
+//             const targetId = userId.toString();
+
+//             if (viewerId && viewerId !== targetId) {
+//                 user.profileVisitors = user.profileVisitors || [];
+
+//                 // Check if visitor already exists -> update visitedAt, else push
+//                 const existing = user.profileVisitors.find(v => v.visitorId.toString() === viewerId);
+//                 const now = new Date();
+//                 if (existing) {
+//                     existing.visitedAt = now;
+//                 } else {
+//                     user.profileVisitors.push({ visitorId: viewerId, visitedAt: now });
+//                 }
+
+//                 // Optional: keep only last 200 visitors
+//                 if (user.profileVisitors.length > 200) {
+//                     // sort descending and slice to keep latest 200
+//                     user.profileVisitors.sort((a, b) => new Date(b.visitedAt) - new Date(a.visitedAt));
+//                     user.profileVisitors = user.profileVisitors.slice(0, 200);
+//                 }
+
+//                 await user.save();
+
+//                 const user = await User.findById(participant._id);
+//                 if (user && user.fcmToken) {
+//                     try {
+//                         await admin.messaging().send({
+//                             token: user.fcmToken,
+//                             notification: {
+//                                 title: `New message from ${sender.userName || sender.username}`,
+//                                 body: content || (messageType === 'image' ? '📷 Image' : 'New message'),
+//                             },
+//                             data: {
+//                                 chatId: chatId.toString(),
+//                                 senderId: senderId.toString(),
+//                                 messageId: message._id.toString(),
+//                             }
+//                         });
+//                     } catch (err) {
+//                         console.error('FCM send error:', err.message);
+//                     }
+//                 }
+//             }
+//         } catch (recErr) {
+//             // Don't fail the profile fetch if updating visitor fails; just log
+//             console.error('Error recording profile visitor:', recErr);
+//         }
+
+//         // Return a plain object (avoid leaking internal fields as needed)
+//         const safeUser = user.toObject();
+//         return res.json({ success: true, user: safeUser });
+//     } catch (err) {
+//         console.error(err);
+//         return res.status(500).json({ success: false, message: 'Server error' });
+//     }
+// };
+
+exports.getProfile = async (req, res) => {
+  try {
     const verification = await verifyUserTokenAndEmail(req);
     if (!verification.success) return res.status(200).json(verification);
 
     const { userId, email } = req.body;
-    if (!userId || !email) return res.status(400).json({ success: false, message: 'userId and email required in body' });
+    if (!userId || !email)
+      return res.status(400).json({ success: false, message: 'userId and email required in body' });
 
-    // Fetch mongoose document (not lean) so we can record visitor
+    // Get the profile owner document
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-    if (user.email !== email) return res.status(403).json({ success: false, message: 'Provided email does not match user' });
+    if (user.email !== email)
+      return res.status(403).json({ success: false, message: 'Provided email does not match user' });
 
-    // Record visitor if the requester is different from the profile owner
+    // Record visitor if the requester is NOT the profile owner
     try {
       const viewerId = req.user && req.user.userId ? req.user.userId.toString() : null;
       const targetId = userId.toString();
 
       if (viewerId && viewerId !== targetId) {
         user.profileVisitors = user.profileVisitors || [];
-
-        // Check if visitor already exists -> update visitedAt, else push
         const existing = user.profileVisitors.find(v => v.visitorId.toString() === viewerId);
         const now = new Date();
+
         if (existing) {
           existing.visitedAt = now;
         } else {
           user.profileVisitors.push({ visitorId: viewerId, visitedAt: now });
         }
 
-        // Optional: keep only last 200 visitors
+        // keep only last 200 visitors
         if (user.profileVisitors.length > 200) {
-          // sort descending and slice to keep latest 200
           user.profileVisitors.sort((a, b) => new Date(b.visitedAt) - new Date(a.visitedAt));
           user.profileVisitors = user.profileVisitors.slice(0, 200);
         }
-
         await user.save();
+
+        // FCM push notification if the profile owner has fcmToken
+        if (user.fcmToken) {
+          try {
+            await admin.messaging().send({
+              token: user.fcmToken,
+              notification: {
+                title: 'Profile Viewed',
+                body: 'Your profile was viewed by someone.',
+              },
+              data: {
+                type: 'PROFILE_VIEW',
+                viewerId: viewerId,
+                timestamp: now.toISOString(),
+              },
+            });
+          } catch (err) {
+            console.error('FCM send error:', err.message);
+          }
+        }
       }
     } catch (recErr) {
       // Don't fail the profile fetch if updating visitor fails; just log
       console.error('Error recording profile visitor:', recErr);
     }
 
-    // Return a plain object (avoid leaking internal fields as needed)
+    // Return a plain object
     const safeUser = user.toObject();
     return res.json({ success: true, user: safeUser });
   } catch (err) {
@@ -7301,45 +7393,121 @@ exports.getProfile = async (req, res) => {
   }
 };
 
+
 // New: fetch profile visitors (returns list of visitors with basic info)
 exports.getProfileVisitors = async (req, res) => {
-  try {
-    const verification = await verifyUserTokenAndEmail(req);
-    if (!verification.success) return res.status(200).json(verification);
+    try {
+        const verification = await verifyUserTokenAndEmail(req);
+        if (!verification.success) return res.status(200).json(verification);
 
-    const { userId, email, limit = 50, page = 1 } = req.body;
-    if (!userId || !email) return res.status(400).json({ success: false, message: 'userId and email required in body' });
+        const { userId, email, limit = 50, page = 1 } = req.body;
+        if (!userId || !email) return res.status(400).json({ success: false, message: 'userId and email required in body' });
 
-    const user = await User.findById(userId).populate({
-      path: 'profileVisitors.visitorId',
-      select: 'fullName userName profilePic'
-    });
+        const user = await User.findById(userId).populate({
+            path: 'profileVisitors.visitorId',
+            select: 'fullName userName profilePic'
+        });
 
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-    if (user.email !== email) return res.status(403).json({ success: false, message: 'Provided email does not match user' });
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+        if (user.email !== email) return res.status(403).json({ success: false, message: 'Provided email does not match user' });
 
-    // Map and sort visitors by visitedAt desc
-    const visitors = (user.profileVisitors || [])
-      .map(v => ({
-        visitorId: v.visitorId ? v.visitorId._id : null,
-        fullName: v.visitorId ? v.visitorId.fullName : null,
-        userName: v.visitorId ? v.visitorId.userName : null,
-        profilePic: v.visitorId ? v.visitorId.profilePic : null,
-        visitedAt: v.visitedAt
-      }))
-      .sort((a, b) => new Date(b.visitedAt) - new Date(a.visitedAt));
+        // Map and sort visitors by visitedAt desc
+        const visitors = (user.profileVisitors || [])
+            .map(v => ({
+                visitorId: v.visitorId ? v.visitorId._id : null,
+                fullName: v.visitorId ? v.visitorId.fullName : null,
+                userName: v.visitorId ? v.visitorId.userName : null,
+                profilePic: v.visitorId ? v.visitorId.profilePic : null,
+                visitedAt: v.visitedAt
+            }))
+            .sort((a, b) => new Date(b.visitedAt) - new Date(a.visitedAt));
 
-    // pagination
-    const l = Math.max(1, parseInt(limit, 10));
-    const p = Math.max(1, parseInt(page, 10));
-    const start = (p - 1) * l;
-    const paged = visitors.slice(start, start + l);
+        // pagination
+        const l = Math.max(1, parseInt(limit, 10));
+        const p = Math.max(1, parseInt(page, 10));
+        const start = (p - 1) * l;
+        const paged = visitors.slice(start, start + l);
 
-    return res.status(200).json({ success: true, total: visitors.length, page: p, limit: l, visitors: paged });
-  } catch (err) {
-    console.error('Error in getProfileVisitors:', err);
-    return res.status(500).json({ success: false, message: 'Server error' });
-  }
+        return res.status(200).json({ success: true, total: visitors.length, page: p, limit: l, visitors: paged });
+    } catch (err) {
+        console.error('Error in getProfileVisitors:', err);
+        return res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+// Update autoDeleteChat
+exports.updateAutoDeleteChat = async (req, res) => {
+    try {
+        const verification = await verifyUserTokenAndEmail(req);
+        if (!verification.success) {
+            return res.status(200).json(verification);
+        }
+        const { autoDeleteChat } = req.body;
+        const validOptions = ['24h', '1w', '30d', 'never'];
+        if (!validOptions.includes(autoDeleteChat)) {
+            return res.status(400).json({ success: false, message: 'Invalid autoDeleteChat value.' });
+        }
+        const user = await User.findByIdAndUpdate(
+            req.user.userId,
+            { autoDeleteChat },
+            { new: true }
+        );
+        res.status(200).json({ success: true, autoDeleteChat: user.autoDeleteChat });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// Get (verify) autoDeleteChat
+exports.getAutoDeleteChat = async (req, res) => {
+    try {
+        const verification = await verifyUserTokenAndEmail(req);
+        if (!verification.success) {
+            return res.status(200).json(verification);
+        }
+        const user = await User.findById(req.user.userId).select('autoDeleteChat');
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+        res.status(200).json({ success: true, autoDeleteChat: user.autoDeleteChat });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// Update hideMutualFriends
+exports.updateHideMutualFriends = async (req, res) => {
+    try {
+        const verification = await verifyUserTokenAndEmail(req);
+        if (!verification.success) {
+            return res.status(200).json(verification);
+        }
+        const { hideMutualFriends } = req.body;
+        if (typeof hideMutualFriends !== 'boolean') {
+            return res.status(400).json({ success: false, message: 'hideMutualFriends must be boolean.' });
+        }
+        const user = await User.findByIdAndUpdate(
+            req.user.userId,
+            { hideMutualFriends },
+            { new: true }
+        );
+        res.status(200).json({ success: true, hideMutualFriends: user.hideMutualFriends });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// Get (verify) hideMutualFriends
+exports.getHideMutualFriends = async (req, res) => {
+    try {
+        const verification = await verifyUserTokenAndEmail(req);
+        if (!verification.success) {
+            return res.status(200).json(verification);
+        }
+        const user = await User.findById(req.user.userId).select('hideMutualFriends');
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+        res.status(200).json({ success: true, hideMutualFriends: user.hideMutualFriends });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
 };
 
 

@@ -193,6 +193,16 @@ const userSchema = new mongoose.Schema({
       visitedAt: { type: Date, default: Date.now }
     }
   ],
+  // Add new fields for privacy settings
+  autoDeleteChat: {
+    type: String,
+    enum: ['24h', '1w', '30d', 'never'],
+    default: 'never'
+  },
+  hideMutualFriends: {
+    type: Boolean,
+    default: false
+  }
 },)
 
 // { strict: false }
