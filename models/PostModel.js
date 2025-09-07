@@ -68,8 +68,8 @@ const postSchema = new mongoose.Schema({
                 required: true,
             },
             profilePic: {
-            type: String,
-            required: false,
+                type: String,
+                required: false,
             },
             fullName: {
                 type: String,
@@ -78,6 +78,10 @@ const postSchema = new mongoose.Schema({
             createdAt: {
                 type: Date,
                 default: Date.now
+            },
+            isAnonymous: {
+                type: Boolean,
+                default: false
             },
             replies: [
                 {
@@ -100,6 +104,10 @@ const postSchema = new mongoose.Schema({
                     fullName: {
                         type: String,
                         required: false,
+                    },
+                    isAnonymous: {
+                        type: Boolean,
+                        default: false
                     },
                 }
             ]
@@ -178,7 +186,7 @@ const postSchema = new mongoose.Schema({
         hashTags: {
             type: String,
             enum: ["spam", "abuse", "misinformation"],
-            default:"spam",
+            default: "spam",
         }
     },
     shareCount: {

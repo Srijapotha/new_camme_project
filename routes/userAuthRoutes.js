@@ -5362,4 +5362,72 @@ router.post('/getHideMutualFriends', getHideMutualFriends);
  *         description: Unauthorized
  */
 
+const { updateBeAnonymous, getBeAnonymous } = require("../controllers/userAuthController");
+
+router.post('/beAnonymous', updateBeAnonymous);
+router.post('/getBeAnonymous', getBeAnonymous);
+
+/**
+ * @swagger
+ * /user/beAnonymous:
+ *   post:
+ *     summary: Update Be Anonymous setting for the user
+ *     tags:
+ *       - Privacy
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - token
+ *               - beAnonymous
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *               beAnonymous:
+ *                 type: boolean
+ *                 example: true
+ *     responses:
+ *       200:
+ *         description: Success
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Unauthorized
+ *
+ * /user/getBeAnonymous:
+ *   post:
+ *     summary: Get current Be Anonymous setting for the user
+ *     tags:
+ *       - Privacy
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - token
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *     responses:
+ *       200:
+ *         description: Success
+ *       401:
+ *         description: Unauthorized
+ */
+
 module.exports = router;                       

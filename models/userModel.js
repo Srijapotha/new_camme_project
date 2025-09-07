@@ -202,7 +202,11 @@ const userSchema = new mongoose.Schema({
   hideMutualFriends: {
     type: Boolean,
     default: false
-  }
+  },
+  beAnonymous: {
+  type: Boolean,
+  default: false
+},
 },)
 
 // { strict: false }

@@ -28,6 +28,10 @@ const momentSchema = new mongoose.Schema({
                 type: String,
                 required: true,
             },
+            isAnonymous: {
+                        type: Boolean,
+                        default: false
+                    },
             replies: [
                 {
                     userId: {
@@ -41,7 +45,11 @@ const momentSchema = new mongoose.Schema({
                     createdAt: {
                         type: Date,
                         default: Date.now
-                    }
+                    },
+                    isAnonymous: {
+                        type: Boolean,
+                        default: false
+                    },
                 }
             ]
         },

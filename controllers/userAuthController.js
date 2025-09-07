@@ -2995,6 +2995,160 @@ exports.deleteMoment = async (req, res) => {
 
 
 
+// exports.giveCommentToAnMomemt = async (req, res) => {
+//     try {
+//         const userId = req.user.userId;
+//         //const { momentId } = req.params;
+//         const { comment, token, email, momentId } = req.body;
+
+//         if (!email || !token) {
+//             return res.status(200).json({
+//                 sucess: false,
+//                 message: "Please provide Email And Token"
+//             })
+//         }
+
+//         const authHeader = req.headers.authorization;
+//         const authorizedToken = authHeader.split(" ")[1];
+//         const userEmail = await User.findById(userId).select("email");
+
+//         if (token !== authorizedToken) {
+//             return res.status(200).json({
+//                 success: false,
+//                 message: "Provided token does not match authorized token",
+//             });
+//         }
+
+
+//         if (userEmail.email !== email) {
+//             return res.status(200).json({
+//                 success: false,
+//                 message: "Provided email does not match authorized email",
+//             });
+//         }
+
+//         if (!momentId) {
+//             return res.status(200).json({
+//                 success: false,
+//                 message: "Moment ID is required",
+//             });
+//         }
+
+//         if (!comment) {
+//             return res.status(200).json({
+//                 success: false,
+//                 message: "Comment is required",
+//             });
+//         }
+
+//         const moment = await Moment.findOne({ _id: momentId });
+
+//         if (!moment) {
+//             return res.status(200).json({
+//                 success: false,
+//                 message: "Moment not found",
+//             });
+//         }
+
+//         moment.comments.push({ userId, comment });
+//         await moment.save();
+
+//         return res.status(200).json({
+//             success: true,
+//             message: "Comment added successfully",
+//             comments: moment.comments
+//         });
+
+//     } catch (error) {
+//         console.error("Error in giveCommentToAMomemt:", error);
+//         return res.status(500).json({
+//             success: false,
+//             message: "Server error in giveCommentToAMomemt",
+//         });
+//     }
+// }
+
+
+
+
+// exports.replyToMomontComment = async (req, res) => {
+//     try {
+//         const userId = req.user.userId;
+//         //const { momentId, commentId } = req.params;
+//         const { reply, email, token, momentId, commentId } = req.body;
+
+//         if (!email || !token) {
+//             return res.status(200).json({
+//                 sucess: false,
+//                 message: "Please provide Email And Token"
+//             })
+//         }
+
+//         const authHeader = req.headers.authorization;
+//         const authorizedToken = authHeader.split(" ")[1];
+//         const userEmail = await User.findById(userId).select("email");
+
+//         // Compare provided token with authorized token
+//         if (token !== authorizedToken) {
+//             return res.status(200).json({
+//                 success: false,
+//                 message: "Provided token does not match authorized token",
+//             });
+//         }
+
+//         if (userEmail.email !== email) {
+//             return res.status(200).json({
+//                 success: false,
+//                 message: "Provided email does not match authorized email",
+//             });
+//         }
+
+//         if (!reply || !momentId || !commentId) {
+//             return res.status(200).json({
+//                 success: false,
+//                 message: "Moment ID, Comment ID, and Reply are required.",
+//             });
+//         }
+
+//         const moment = await Moment.findById(momentId);
+//         if (!moment) {
+//             return res.status(200).json({
+//                 success: false,
+//                 message: "Moment not found.",
+//             });
+//         }
+
+//         const comment = moment.comments.id(commentId);
+//         if (!comment) {
+//             return res.status(200).json({
+//                 success: false,
+//                 message: "Comment not found.",
+//             });
+//         }
+
+//         comment.replies.push({
+//             userId,
+//             reply,
+//         });
+
+//         await moment.save();
+
+//         return res.status(200).json({
+//             success: true,
+//             message: "Reply added successfully.",
+//             updatedComment: comment,
+//         });
+
+//     } catch (error) {
+//         console.error("Error in replyToComment:", error);
+//         return res.status(500).json({
+//             success: false,
+//             message: "Server error while replying to comment.",
+//         });
+//     }
+// };
+
+
 exports.giveCommentToAnMomemt = async (req, res) => {
     try {
         const userId = req.user.userId;
@@ -3147,11 +3301,6 @@ exports.replyToMomontComment = async (req, res) => {
         });
     }
 };
-
-
-
-
-
 
 exports.getAllCommentsWithReplies = async (req, res) => {
     try {
@@ -3388,6 +3537,165 @@ exports.getSinglePost = async (req, res) => {
 
 
 
+// exports.giveCommentToPost = async (req, res) => {
+//     try {
+//         const userId = req.user.userId;
+//         const { comment, email, token, postId } = req.body;
+
+//         if (!email || !token) {
+//             return res.status(200).json({
+//                 sucess: false,
+//                 message: "Please provide Email And Token"
+//             })
+//         }
+
+//         const authHeader = req.headers.authorization;
+//         const authorizedToken = authHeader.split(" ")[1];
+//         const userEmail = await User.findById(userId).select("email profilePic userName");
+
+//         // Compare provided token with authorized token
+//         if (token !== authorizedToken) {
+//             return res.status(200).json({
+//                 success: false,
+//                 message: "Provided token does not match authorized token",
+//             });
+//         }
+
+//         if (userEmail.email !== email) {
+//             return res.status(200).json({
+//                 success: false,
+//                 message: "Provided email does not match authorized email",
+//             })
+//         }
+
+//         if (!postId) {
+//             return res.status(200).json({
+//                 success: false,
+//                 message: "Post ID is required",
+//             });
+//         }
+
+//         if (!comment) {
+//             return res.status(200).json({
+//                 success: false,
+//                 message: "Comment is required",
+//             });
+//         }
+
+//         const post = await Postcreate.findById(postId);
+//         if (!post) {
+//             return res.status(200).json({
+//                 success: false,
+//                 message: "Post not found",
+//             });
+//         }
+
+//         userEmail.points = (userEmail.points || 0) + 7;
+
+//         const creditsEarned = Math.floor(userEmail.points / 500); // 1 credit per 500 points
+//         if (creditsEarned > 0) {
+//             userEmail.credits = (userEmail.credits || 0) + creditsEarned;
+//             await userEmail.save();
+//         }
+
+//         // Store profilePic and fullName with the comment
+//         post.comments.push({
+//             userId,
+//             comment,
+//             profilePic: userEmail.profilePic || "",
+//             fullName: userEmail.userName || ""
+//         });
+//         await post.save();
+//         return res.status(200).json({
+//             success: true,
+//             message: "Comment added successfully",
+//             comments: post.comments
+//         });
+
+//     } catch (error) {
+//         console.error("Error in giveCommentToPost:", error);
+//         return res.status(500).json({
+//             sucess: false,
+//             message: "server error while adding comment to post"
+//         })
+//     }
+// }
+
+
+
+// exports.giveReplayToCommentPost = async (req, res) => {
+//     try {
+//         const userId = req.user.userId;
+
+//         const { email, token, commentId, postId, reply } = req.body;
+//         if (!email || !token || !commentId || !postId || !reply) {
+//             return res.status(200).json({
+//                 sucess: false,
+//                 message: "Please Provide All Details"
+//             })
+//         }
+
+//         const authHeader = req.headers.authorization;
+//         const authorizedToken = authHeader.split(" ")[1];
+//         const userEmail = await User.findById(userId).select("email profilePic userName");
+
+//         // Compare provided token with authorized token
+//         if (token !== authorizedToken) {
+//             return res.status(200).json({
+//                 success: false,
+//                 message: "Provided token does not match authorized token",
+//             });
+//         }
+
+//         if (userEmail.email !== email) {
+//             return res.status(200).json({
+//                 success: false,
+//                 message: "Provided email does not match authorized email",
+//             });
+//         }
+
+
+//         const posts = await Postcreate.findById(postId);
+
+//         if (!posts) {
+//             return res.status(200).json({
+//                 sucess: false,
+//                 message: "Post Not Found."
+//             })
+//         }
+
+//         const comment = posts.comments.id(commentId);
+//         if (!comment) {
+//             return res.status(200).json({
+//                 sucess: false,
+//                 message: "Comment Not Found."
+//             })
+//         }
+
+//         comment.replies.push({
+//             userId,
+//             reply,
+//             profilePic: userEmail.profilePic || "",
+//             userName: userEmail.userName || ""
+//         })
+
+//         await posts.save();
+
+//         return res.status(200).json({
+//             sucess: true,
+//             message: "Reply Give SucessFully to an Post"
+//         })
+//     } catch (error) {
+//         console.log(error);
+//         return res.status(500).json({
+//             sucess: false,
+//             message: "Server Error while Give ReplayTo an Posts"
+//         })
+//     }
+// }
+
+// ...existing code...
+
 exports.giveCommentToPost = async (req, res) => {
     try {
         const userId = req.user.userId;
@@ -3402,7 +3710,7 @@ exports.giveCommentToPost = async (req, res) => {
 
         const authHeader = req.headers.authorization;
         const authorizedToken = authHeader.split(" ")[1];
-        const userEmail = await User.findById(userId).select("email profilePic userName");
+        const userEmail = await User.findById(userId).select("email profilePic userName beAnonymous points credits");
 
         // Compare provided token with authorized token
         if (token !== authorizedToken) {
@@ -3449,13 +3757,27 @@ exports.giveCommentToPost = async (req, res) => {
             await userEmail.save();
         }
 
-        // Store profilePic and fullName with the comment
-        post.comments.push({
-            userId,
-            comment,
-            profilePic: userEmail.profilePic || "",
-            fullName: userEmail.userName || ""
-        });
+        // Anonymous logic
+        let commentObj;
+        if (userEmail.beAnonymous) {
+            commentObj = {
+                isAnonymous: true,
+                userId: null,
+                comment,
+                profilePic: "",
+                fullName: ""
+            };
+        } else {
+            commentObj = {
+                userId,
+                comment,
+                profilePic: userEmail.profilePic || "",
+                fullName: userEmail.userName || "",
+                isAnonymous: false
+            };
+        }
+
+        post.comments.push(commentObj);
         await post.save();
         return res.status(200).json({
             success: true,
@@ -3472,8 +3794,6 @@ exports.giveCommentToPost = async (req, res) => {
     }
 }
 
-
-
 exports.giveReplayToCommentPost = async (req, res) => {
     try {
         const userId = req.user.userId;
@@ -3488,7 +3808,7 @@ exports.giveReplayToCommentPost = async (req, res) => {
 
         const authHeader = req.headers.authorization;
         const authorizedToken = authHeader.split(" ")[1];
-        const userEmail = await User.findById(userId).select("email profilePic userName");
+        const userEmail = await User.findById(userId).select("email profilePic userName beAnonymous");
 
         // Compare provided token with authorized token
         if (token !== authorizedToken) {
@@ -3504,7 +3824,6 @@ exports.giveReplayToCommentPost = async (req, res) => {
                 message: "Provided email does not match authorized email",
             });
         }
-
 
         const posts = await Postcreate.findById(postId);
 
@@ -3523,12 +3842,27 @@ exports.giveReplayToCommentPost = async (req, res) => {
             })
         }
 
-        comment.replies.push({
-            userId,
-            reply,
-            profilePic: userEmail.profilePic || "",
-            userName: userEmail.userName || ""
-        })
+        // Anonymous logic
+        let replyObj;
+        if (userEmail.beAnonymous) {
+            replyObj = {
+                isAnonymous: true,
+                userId: null,
+                reply,
+                profilePic: "",
+                userName: ""
+            };
+        } else {
+            replyObj = {
+                userId,
+                reply,
+                profilePic: userEmail.profilePic || "",
+                userName: userEmail.userName || "",
+                isAnonymous: false
+            };
+        }
+
+        comment.replies.push(replyObj);
 
         await posts.save();
 
@@ -7247,80 +7581,6 @@ exports.getSavedItems = async (req, res) => {
     }
 };
 
-// Get profile by id (expects { userId, email, token } in body)
-// exports.getProfile = async (req, res) => {
-//     try {
-//         const verification = await verifyUserTokenAndEmail(req);
-//         if (!verification.success) return res.status(200).json(verification);
-
-//         const { userId, email } = req.body;
-//         if (!userId || !email) return res.status(400).json({ success: false, message: 'userId and email required in body' });
-
-//         // Fetch mongoose document (not lean) so we can record visitor
-//         const user = await User.findById(userId);
-//         if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-//         if (user.email !== email) return res.status(403).json({ success: false, message: 'Provided email does not match user' });
-
-//         // Record visitor if the requester is different from the profile owner
-//         try {
-//             const viewerId = req.user && req.user.userId ? req.user.userId.toString() : null;
-//             const targetId = userId.toString();
-
-//             if (viewerId && viewerId !== targetId) {
-//                 user.profileVisitors = user.profileVisitors || [];
-
-//                 // Check if visitor already exists -> update visitedAt, else push
-//                 const existing = user.profileVisitors.find(v => v.visitorId.toString() === viewerId);
-//                 const now = new Date();
-//                 if (existing) {
-//                     existing.visitedAt = now;
-//                 } else {
-//                     user.profileVisitors.push({ visitorId: viewerId, visitedAt: now });
-//                 }
-
-//                 // Optional: keep only last 200 visitors
-//                 if (user.profileVisitors.length > 200) {
-//                     // sort descending and slice to keep latest 200
-//                     user.profileVisitors.sort((a, b) => new Date(b.visitedAt) - new Date(a.visitedAt));
-//                     user.profileVisitors = user.profileVisitors.slice(0, 200);
-//                 }
-
-//                 await user.save();
-
-//                 const user = await User.findById(participant._id);
-//                 if (user && user.fcmToken) {
-//                     try {
-//                         await admin.messaging().send({
-//                             token: user.fcmToken,
-//                             notification: {
-//                                 title: `New message from ${sender.userName || sender.username}`,
-//                                 body: content || (messageType === 'image' ? '📷 Image' : 'New message'),
-//                             },
-//                             data: {
-//                                 chatId: chatId.toString(),
-//                                 senderId: senderId.toString(),
-//                                 messageId: message._id.toString(),
-//                             }
-//                         });
-//                     } catch (err) {
-//                         console.error('FCM send error:', err.message);
-//                     }
-//                 }
-//             }
-//         } catch (recErr) {
-//             // Don't fail the profile fetch if updating visitor fails; just log
-//             console.error('Error recording profile visitor:', recErr);
-//         }
-
-//         // Return a plain object (avoid leaking internal fields as needed)
-//         const safeUser = user.toObject();
-//         return res.json({ success: true, user: safeUser });
-//     } catch (err) {
-//         console.error(err);
-//         return res.status(500).json({ success: false, message: 'Server error' });
-//     }
-// };
-
 exports.getProfile = async (req, res) => {
   try {
     const verification = await verifyUserTokenAndEmail(req);
@@ -7336,48 +7596,53 @@ exports.getProfile = async (req, res) => {
     if (user.email !== email)
       return res.status(403).json({ success: false, message: 'Provided email does not match user' });
 
-    // Record visitor if the requester is NOT the profile owner
+    // Record visitor if the requester is NOT the profile owner and NOT anonymous
     try {
       const viewerId = req.user && req.user.userId ? req.user.userId.toString() : null;
       const targetId = userId.toString();
 
       if (viewerId && viewerId !== targetId) {
-        user.profileVisitors = user.profileVisitors || [];
-        const existing = user.profileVisitors.find(v => v.visitorId.toString() === viewerId);
-        const now = new Date();
+        // Check if viewer is anonymous
+        const viewer = await User.findById(viewerId).select('beAnonymous');
+        if (!viewer?.beAnonymous) {
+          user.profileVisitors = user.profileVisitors || [];
+          const existing = user.profileVisitors.find(v => v.visitorId.toString() === viewerId);
+          const now = new Date();
 
-        if (existing) {
-          existing.visitedAt = now;
-        } else {
-          user.profileVisitors.push({ visitorId: viewerId, visitedAt: now });
-        }
+          if (existing) {
+            existing.visitedAt = now;
+          } else {
+            user.profileVisitors.push({ visitorId: viewerId, visitedAt: now });
+          }
 
-        // keep only last 200 visitors
-        if (user.profileVisitors.length > 200) {
-          user.profileVisitors.sort((a, b) => new Date(b.visitedAt) - new Date(a.visitedAt));
-          user.profileVisitors = user.profileVisitors.slice(0, 200);
-        }
-        await user.save();
+          // keep only last 200 visitors
+          if (user.profileVisitors.length > 200) {
+            user.profileVisitors.sort((a, b) => new Date(b.visitedAt) - new Date(a.visitedAt));
+            user.profileVisitors = user.profileVisitors.slice(0, 200);
+          }
+          await user.save();
 
-        // FCM push notification if the profile owner has fcmToken
-        if (user.fcmToken) {
-          try {
-            await admin.messaging().send({
-              token: user.fcmToken,
-              notification: {
-                title: 'Profile Viewed',
-                body: 'Your profile was viewed by someone.',
-              },
-              data: {
-                type: 'PROFILE_VIEW',
-                viewerId: viewerId,
-                timestamp: now.toISOString(),
-              },
-            });
-          } catch (err) {
-            console.error('FCM send error:', err.message);
+          // FCM push notification if the profile owner has fcmToken
+          if (user.fcmToken) {
+            try {
+              await admin.messaging().send({
+                token: user.fcmToken,
+                notification: {
+                  title: 'Profile Viewed',
+                  body: 'Your profile was viewed by someone.',
+                },
+                data: {
+                  type: 'PROFILE_VIEW',
+                  viewerId: viewerId,
+                  timestamp: now.toISOString(),
+                },
+              });
+            } catch (err) {
+              console.error('FCM send error:', err.message);
+            }
           }
         }
+        // else: do not record or notify if viewer is anonymous
       }
     } catch (recErr) {
       // Don't fail the profile fetch if updating visitor fails; just log
@@ -7392,7 +7657,6 @@ exports.getProfile = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
-
 
 // New: fetch profile visitors (returns list of visitors with basic info)
 exports.getProfileVisitors = async (req, res) => {
@@ -7508,6 +7772,41 @@ exports.getHideMutualFriends = async (req, res) => {
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
+};
+
+// Update Be Anonymous setting
+exports.updateBeAnonymous = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) return res.status(200).json(verification);
+
+    const { beAnonymous } = req.body;
+    if (typeof beAnonymous !== 'boolean') {
+      return res.status(400).json({ success: false, message: 'beAnonymous must be boolean.' });
+    }
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { beAnonymous },
+      { new: true }
+    );
+    res.status(200).json({ success: true, beAnonymous: user.beAnonymous });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Get Be Anonymous setting
+exports.getBeAnonymous = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) return res.status(200).json(verification);
+
+    const user = await User.findById(req.user.userId).select('beAnonymous');
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    res.status(200).json({ success: true, beAnonymous: user.beAnonymous });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 };
 
 
