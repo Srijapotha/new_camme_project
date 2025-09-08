@@ -7,7 +7,12 @@ const ChatSchema = new mongoose.Schema({
   groupPhoto: String,
   groupTheme: String,
   adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  autoDeleteTime: { type: Number, default: 0 }, // in hours, 0 = never
+  // autoDeleteTime: { type: Number, default: 0 }, // in hours, 0 = never
+  autoDeleteTime: {
+    type: String,
+    enum: ['24h', '1w', '30d', 'never'],
+    default: 'never'
+  },
   pinnedMessages: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Message' }],
   createdAt: { type: Date, default: Date.now },
   lastActivity: { type: Date, default: Date.now }

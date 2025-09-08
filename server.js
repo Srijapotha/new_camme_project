@@ -115,8 +115,25 @@ io.on('connection', (socket) => {
                 sentAt: new Date()
             });
 
-            if (chat.autoDeleteTime > 0) {
-                message.autoDeleteAt = new Date(Date.now() + chat.autoDeleteTime * 60 * 60 * 1000);
+            // if (chat.autoDeleteTime > 0) {
+            //     message.autoDeleteAt = new Date(Date.now() + chat.autoDeleteTime * 60 * 60 * 1000);
+            // }
+            let autoDeleteMs = null;
+            switch (chat.autoDeleteTime) {
+                case '24h':
+                    autoDeleteMs = 24 * 60 * 60 * 1000;
+                    break;
+                case '1w':
+                    autoDeleteMs = 7 * 24 * 60 * 60 * 1000;
+                    break;
+                case '30d':
+                    autoDeleteMs = 30 * 24 * 60 * 60 * 1000;
+                    break;
+                default:
+                    autoDeleteMs = null; // 'never'
+            }
+            if (autoDeleteMs) {
+                message.autoDeleteAt = new Date(Date.now() + autoDeleteMs);
             }
 
             await message.save();

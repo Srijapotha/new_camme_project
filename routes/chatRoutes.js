@@ -768,8 +768,9 @@ router.post('/get-auto-delete-setting', authMiddleware, getAutoDeleteSetting);
  *               chatId:
  *                 type: string
  *               autoDeleteTime:
- *                 type: integer
- *                 description: Minutes after which messages are auto-deleted.
+ *                 type: string
+ *                 enum: [24h, 1w, 30d, never]
+ *                 description: Auto-delete time for messages in this chat. One of: 24h (24 hours), 1w (1 week), 30d (30 days), never (no auto-delete).
  *               email:
  *                 type: string
  *                 format: email
