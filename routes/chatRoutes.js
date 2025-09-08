@@ -409,7 +409,35 @@ router.post('/verify-chat-pin', authMiddleware, verifyChatPin);
  *               userId:
  *                 type: string
  *               messageId:
- *                 type: string
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                   chatId:
+ *                     type: string
+ *                   senderId:
+ *                     type: string
+ *                   senderProfile:
+ *                     type: object
+ *                     properties:
+ *                       userName:
+ *                         type: string
+ *                       fullName:
+ *                         type: string
+ *                       profilePic:
+ *                         type: string
+ *                       isOnline:
+ *                         type: boolean
+ *                       lastSeen:
+ *                         type: string
+ *                         format: date-time
+ *                   content:
+ *                     type: string
+ *                   messageType:
+ *                     type: string
+ *                   sentAt:
+ *                     type: string
+ *                     format: date-time
  *               email:
  *                 type: string
  *                 format: email
