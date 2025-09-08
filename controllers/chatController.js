@@ -285,6 +285,24 @@ exports.verifyChatPin = async (req, res) => {
   }
 };
 
+// exports.saveMessage = async (req, res) => {
+//   try {
+//     const verification = await verifyUserTokenAndEmail(req);
+//     if (!verification.success) {
+//       return res.status(200).json(verification);
+//     }
+//     const { userId, messageId } = req.body;
+//     await User.findByIdAndUpdate(userId, {
+//       $addToSet: { savedMessages: { messageId: messageId, savedAt: new Date() } }
+//     });
+//     res.json({ message: 'Message saved successfully', user: User });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// };
+
+// ...existing code...
+
 exports.saveMessage = async (req, res) => {
   try {
     const verification = await verifyUserTokenAndEmail(req);
@@ -292,10 +310,25 @@ exports.saveMessage = async (req, res) => {
       return res.status(200).json(verification);
     }
     const { userId, messageId } = req.body;
-    await User.findByIdAndUpdate(userId, {
-      $addToSet: { savedMessages: { messageId, savedAt: new Date() } }
+    if (!userId || !messageId) {
+      return res.status(400).json({ error: 'userId and messageId are required' });
+    }
+
+    // Add to savedMessages
+    const saved = await User.findByIdAndUpdate(userId, {
+      $addToSet: { savedMessages: { messageId: messageId, savedAt: new Date() } }
     });
-    res.json({ message: 'Message saved successfully' });
+
+    // Fetch user again to check if saved
+    const user = await User.findById(userId);
+    const isSaved = user.savedMessages.some(sm => sm.messageId?.toString() === messageId.toString());
+
+    if (isSaved) {
+      
+      res.json({ message: 'Message saved successfully' });
+    } else {
+      res.status(500).json({ error: 'Failed to save message' });
+    }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -429,9 +462,10 @@ exports.listSavedMessages = async (req, res) => {
     const { userId } = req.body;
     const user = await User.findById(userId).populate('savedMessages.messageId');
     if (!user) return res.status(404).json({ error: 'User not found' });
+    console.log(user.savedMessages);
     const formatted = (user.savedMessages || []).map(sm => ({
-      messageId: sm.messageId?._id,
-      content: sm.messageId?.content,
+      messageId: sm?.messageId?._id,
+      content: sm?.messageId?.content,
       senderId: sm.messageId?.senderId,
       receiverId: sm.messageId?.receiverId,
       sentAt: sm.messageId?.sentAt,

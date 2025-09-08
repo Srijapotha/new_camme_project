@@ -4,6 +4,57 @@ const User = require('../models/userModel');
 const { verifyUserTokenAndEmail } = require('../middleware/addirionalSecurity');
 const { setNotificationSetting, getNotificationSetting, setPin, verifyPin } = require('../utils/chatGroupUtils');
 
+// Create a new group chat
+exports.createGroup = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { adminId, groupName, participants, groupTheme, groupPhoto } = req.body;
+
+    // Validation
+    if (!adminId || !groupName || !participants || !Array.isArray(participants) || participants.length === 0) {
+      return res.status(400).json({ error: 'adminId, groupName, and participants are required' });
+    }
+
+    // Check for existing group with same name (global)
+    const existingGroup = await Group.findOne({ groupName, isGroup: true });
+    if (existingGroup) {
+      return res.status(409).json({ error: 'Group with this name already exists.' });
+    }
+
+    // Ensure admin is in participants
+    if (!participants.includes(adminId)) {
+      participants.push(adminId);
+    }
+
+    // Create group object
+    const groupData = {
+      adminId,
+      groupName,
+      participants,
+      isGroup: true,
+      groupTheme: groupTheme || "",
+      groupPhoto: groupPhoto || "",
+      createdAt: new Date()
+    };
+
+    // Create group in DB
+    const group = await Group.create(groupData);
+
+    // Optionally, populate participants for response
+    await group.populate('participants', 'userName fullName profilePic email');
+
+    res.status(200).json({
+      group,
+      message: 'Group created successfully.'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Update group profile, theme, or photo
 exports.updateGroupProfile = async (req, res) => {
   try {

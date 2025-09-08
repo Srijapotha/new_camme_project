@@ -51,6 +51,9 @@ function safeHandler(fnName) {
  *                   type: string
  *               groupTheme:
  *                 type: string
+ *               groupPhoto:
+ *                 type: string
+ *                 description: URL or file path
  *               email:
  *                 type: string
  *                 format: email
@@ -74,7 +77,7 @@ function safeHandler(fnName) {
  *       500:
  *         description: Server error.
  */
-router.post('/create-group', authMiddleware, safeHandler('createGroup'));
+router.post('/create-group', authMiddleware, groupController.createGroup);
 
 /**
  * @swagger

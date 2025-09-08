@@ -171,8 +171,9 @@ const userSchema = new mongoose.Schema({
   restrictedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   privateChatPins: { type: Map, of: String }, // chatId -> PIN hash
   savedMessages: [{
-    messageId: { type: mongoose.Schema.Types.ObjectId, ref: 'Message' },
-    savedAt: { type: Date, default: Date.now }
+    // messageId: { type: mongoose.Schema.Types.ObjectId, ref: 'Message' },
+    messageId: { type: Object },
+    savedAt: { type: Date, default: Date.now },
   }],
   notificationSettings: { type: Map, of: Boolean }, // userId -> enabled
   socialMedia: [
