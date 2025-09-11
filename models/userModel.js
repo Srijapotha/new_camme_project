@@ -208,6 +208,10 @@ const userSchema = new mongoose.Schema({
   type: Boolean,
   default: false
 },
+closeFriends: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
 },)
 
 // { strict: false }

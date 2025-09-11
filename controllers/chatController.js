@@ -526,6 +526,47 @@ exports.listRestrictedUsers = async (req, res) => {
 };
 
 // Fetch online users (expects an array of userIds to check)
+// exports.fetchOnlineUsers = async (req, res) => {
+//   try {
+//     const verification = await verifyUserTokenAndEmail(req);
+//     if (!verification.success) {
+//       return res.status(200).json(verification);
+//     }
+//     const { userId } = req.body;
+//     if (!userId) {
+//       return res.status(400).json({ error: 'userId is required' });
+//     }
+//     // Get user's friends
+//     const user = await User.findById(userId).populate('userAllFriends', 'username email fullName profilePic isOnline lastSeen');
+//     if (!user) return res.status(404).json({ error: 'User not found' });
+
+//     // Filter only online friends
+//     const onlineUsers = (user.userAllFriends || []).filter(friend => friend.isOnline);
+
+//     res.json({ onlineUsers });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// };
+
+// Fetch friends list (using userAllFriends)
+// exports.fetchFriendsList = async (req, res) => {
+//   try {
+//     const verification = await verifyUserTokenAndEmail(req);
+//     if (!verification.success) {
+//       return res.status(200).json(verification);
+//     }
+//     const { userId } = req.body;
+//     const user = await User.findById(userId).populate('userAllFriends', 'username email fullName profilePic isOnline lastSeen');
+//     if (!user) return res.status(404).json({ error: 'User not found' });
+
+//     res.json({ friends: user.userAllFriends });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// };
+
+
 exports.fetchOnlineUsers = async (req, res) => {
   try {
     const verification = await verifyUserTokenAndEmail(req);
@@ -543,13 +584,19 @@ exports.fetchOnlineUsers = async (req, res) => {
     // Filter only online friends
     const onlineUsers = (user.userAllFriends || []).filter(friend => friend.isOnline);
 
-    res.json({ onlineUsers });
+    // Find existing private chats with these online friends
+    const onlineUserIds = onlineUsers.map(friend => friend._id);
+    const chats = await Chat.find({
+      isGroup: false,
+      participants: { $all: [userId], $in: onlineUserIds }
+    }).populate('participants', 'username email fullName');
+
+    res.json({ onlineUsers, existingChats: chats });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// Fetch friends list (using userAllFriends)
 exports.fetchFriendsList = async (req, res) => {
   try {
     const verification = await verifyUserTokenAndEmail(req);
@@ -557,10 +604,22 @@ exports.fetchFriendsList = async (req, res) => {
       return res.status(200).json(verification);
     }
     const { userId } = req.body;
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
     const user = await User.findById(userId).populate('userAllFriends', 'username email fullName profilePic isOnline lastSeen');
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    res.json({ friends: user.userAllFriends });
+    const friends = user.userAllFriends || [];
+    const friendIds = friends.map(friend => friend._id);
+
+    // Find existing private chats with these friends
+    const chats = await Chat.find({
+      isGroup: false,
+      participants: { $all: [userId], $in: friendIds }
+    }).populate('participants', 'username email fullName');
+
+    res.json({ friends, existingChats: chats });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

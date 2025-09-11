@@ -95,7 +95,14 @@ const {
   updateAutoDeleteChat,
   getAutoDeleteChat,
   updateHideMutualFriends,
-  getHideMutualFriends
+  getHideMutualFriends,
+  updateBeAnonymous,
+  getBeAnonymous,
+  getCloseFriends,
+  addToCloseFriends,
+  removeFromCloseFriends,
+  getMyActivityByDate,
+  getMyInteractionsByDate
 } = require("../controllers/userAuthController")
 const { authMiddleware } = require('../middleware/authMiddleware');
 const { uploadd } = require("../middleware/multer");
@@ -2548,7 +2555,7 @@ router.post("/giveReplayToCommentPost", authMiddleware, giveReplayToCommentPost)
  *       404:
  *         description: Post not found
  *       500:
- *         description: Server error
+ *         description: Server error while fetching comments and replies
  */
 router.post("/getAllCommentsAndReplies", authMiddleware, getAllCommentsAndReplies);
 
@@ -3362,30 +3369,18 @@ router.post("/acceptFriendRequest",authMiddleware, acceptFriendRequest);
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 message:
  *                   type: string
- *       403:
- *         description: Provided token does not match authorized token
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
+ *                   example: Approach Rejected
+ *       400:
+ *         description: Missing required fields like userId or requestId
+ *       401:
+ *         description: Invalid token or email
+ *       404:
+ *         description: No approach request found
  *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
+ *         description: Server error while rejecting the request
  */
 router.post("/rejectFriendRequest",authMiddleware,rejectFriendRequest)
 /**
@@ -4100,6 +4095,7 @@ router.post("/deleteAPost",authMiddleware,deleteAPost)
  *               - email
  *               - token
  *               - profileDisplay
+ *               - apporachMode
  *             properties:
  *               distance:
  *                 type: number
@@ -4112,9 +4108,14 @@ router.post("/deleteAPost",authMiddleware,deleteAPost)
  *               token:
  *                 type: string
  *                 description: Bearer token from Authorization header
+ *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  *               profileDisplay:
  *                 type: boolean
  *                 description: Whether profile visibility is enabled or not
+ *                 example: true
+ *               apporachMode:
+ *                 type: boolean
+ *                 description: Whether the user has enabled approach mode
  *                 example: true
  *     responses:
  *       200:
@@ -4217,8 +4218,7 @@ router.post("/fetchMapSetting",authMiddleware,fetchMapSetting)
  *                 example: user@example.com
  *               token:
  *                 type: string
- *                 description: JWT token from Authorization header
- *                 example: eyJhbGciOiJIUzI1NiIsInR...
+ *                 example: your_jwt_token_here
  *               requestId:
  *                 type: string
  *                 description: ID of the user to whom the request is being sent
@@ -4327,7 +4327,7 @@ router.post("/acceptReqApporach",authMiddleware,acceptReqApporach)
  *                 example: user@example.com
  *               token:
  *                 type: string
- *                 description: JWT token of the user (must match Authorization header)
+ *                 description: JWT token of the user
  *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6...
  *               requestId:
  *                 type: string
@@ -4695,24 +4695,33 @@ router.post("/FetchPhotoGraphyForHome",authMiddleware,FetchPhotoGraphyForHome)
 //  *                 example: true
 //  *     responses:
 //  *       200:
-//  *         description: Approach request sent successfully or required settings are disabled
+//  *         description: Success or failure message with friend locations if applicable.
 //  *         content:
 //  *           application/json:
 //  *             schema:
 //  *               type: object
 //  *               properties:
-//  *                 success:
+//  *                 sucess:
 //  *                   type: boolean
+//  *                   example: true
 //  *                 message:
 //  *                   type: string
-//  *       400:
-//  *         description: Missing apporachId
+//  *                   example: Inside in Apporach Mode
+//  *                 Location:
+//  *                   type: array
+//  *                   items:
+//  *                     type: object
+//  *                     properties:
+//  *                       lattitude:
+//  *                         type: number
+//  *                         example: 28.6139
+//  *                       longitude:
+//  *                         type: number
+//  *                         example: 77.2090
 //  *       401:
-//  *         description: Invalid token or email
-//  *       404:
-//  *         description: Target user not found
+//  *         description: Unauthorized (Invalid token or email).
 //  *       500:
-//  *         description: Server error in handling approach mode
+//  *         description: Server error.
 //  */
 // router.post("/apporachModeToAUser",authMiddleware,apporachModeToAUser)
 // /**
@@ -5129,16 +5138,12 @@ router.post('/approveOrRejectBlackCoin', authMiddleware, approveOrRejectBlackCoi
  *                 description: Requester's email (must match authenticated user's email)
  *               token:
  *                 type: string
- *                 description: JWT token (must match Authorization header)
+ *                 description: JWT token (must match the Authorization header)
  *               limit:
  *                 type: integer
  *                 description: Number of visitor records per page (optional, default 50)
  *               page:
  *                 type: integer
- *                 description: Page number (optional, default 1)
- *     responses:
- *       200:
- *         description: Visitor list returned
  *         content:
  *           application/json:
  *             schema:
@@ -5430,4 +5435,155 @@ router.post('/getBeAnonymous', getBeAnonymous);
  *         description: Unauthorized
  */
 
-module.exports = router;                       
+/**
+ * @swagger
+ * /api/v1/user/close-friends/add:
+ *   post:
+ *     summary: Add a friend to Close Friends
+ *     tags:
+ *       - User
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - token
+ *               - friendId
+ *             properties:
+ *               email:
+ *                 type: string
+ *               token:
+ *                 type: string
+ *               friendId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Added to close friends
+ */
+router.post('/close-friends/add', authMiddleware, addToCloseFriends);
+
+/**
+ * @swagger
+ * /api/v1/user/close-friends/remove:
+ *   post:
+ *     summary: Remove a friend from Close Friends
+ *     tags:
+ *       - User
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - token
+ *               - friendId
+ *             properties:
+ *               email:
+ *                 type: string
+ *               token:
+ *                 type: string
+ *               friendId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Removed from close friends
+ */
+router.post('/close-friends/remove', authMiddleware, removeFromCloseFriends);
+
+/**
+ * @swagger
+ * /api/v1/user/close-friends/list:
+ *   post:
+ *     summary: Get the Close Friends list
+ *     tags:
+ *       - User
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - token
+ *             properties:
+ *               email:
+ *                 type: string
+ *               token:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: List of close friends
+ */
+router.post('/close-friends/list', authMiddleware, getCloseFriends);
+
+/**
+ * @swagger
+ * /user/my-activity:
+ *   post:
+ *     summary: Get all user activities for a specific date
+ *     tags:
+ *       - User
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - token
+ *               - date
+ *             properties:
+ *               email:
+ *                 type: string
+ *               token:
+ *                 type: string
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 example: "2025-09-11"
+ *     responses:
+ *       200:
+ *         description: Activities for the selected date
+ */
+router.post('/my-activity', authMiddleware, getMyActivityByDate);
+
+/**
+ * @swagger
+ * /user/my-interactions:
+ *   post:
+ *     summary: Get all user interactions for a specific date
+ *     tags:
+ *      - User
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - token
+ *               - date
+ *             properties:
+ *               email:
+ *                 type: string
+ *               token:
+ *                 type: string
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 example: "2025-09-11"
+ *     responses:
+ *       200:
+ *         description: Interactions for the selected date
+ */
+router.post('/my-interactions', authMiddleware, getMyInteractionsByDate);
+
+module.exports = router;                      
