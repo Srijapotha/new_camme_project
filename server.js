@@ -18,6 +18,7 @@ const profileRoutes = require('./routes/profileRoutes');
 const notificationSettingsRoutes = require('./routes/notificationSettings');
 const devicePermissionRoutes = require('./routes/devicePermissionRoutes')
 const reportRoutes = require('./routes/reportRoutes');
+const adRoutes = require('./routes/advertisementRoutes');
 
 // Model Imports (make sure these exist)
 const Message = require("./models/message");
@@ -316,6 +317,7 @@ app.use('/api/v1/profile', express.json({
 app.use('/api/v1/notification-settings', notificationSettingsRoutes);
 app.use('/api/v1/device-permissions', devicePermissionRoutes);
 app.use('/api/v1/reports', reportRoutes);
+app.use('/api/v1/ads', adRoutes);
 
 app.get("/", (req, res) => {
     res.send("Welcome to the Cam Me Application API Documentation");
