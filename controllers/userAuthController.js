@@ -145,7 +145,7 @@ exports.register = async (req, res) => {
         console.error('Error in register:', error);
         res.status(500).json({
             success: false,
-            message: 'Error in register User controller',
+            message: error.message,
         });
     }
 };
@@ -411,14 +411,14 @@ exports.login = async (req, res) => {
             })
         }
 
-        let user = await User.findOne({ email });
+        let user = await User.findOne({ $and: [{ email }, { userName }] });
 
         if (!user) {
             return res.status(200).json({
-                sucess: "false",
-                message: "User is not register"
-            })
-        };
+                success: false,
+                message: "User is not registered"
+            });
+        }
 
 
         if (!user.isVerified) {
@@ -7582,80 +7582,80 @@ exports.getSavedItems = async (req, res) => {
 };
 
 exports.getProfile = async (req, res) => {
-  try {
-    const verification = await verifyUserTokenAndEmail(req);
-    if (!verification.success) return res.status(200).json(verification);
-
-    const { userId, email } = req.body;
-    if (!userId || !email)
-      return res.status(400).json({ success: false, message: 'userId and email required in body' });
-
-    // Get the profile owner document
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-    if (user.email !== email)
-      return res.status(403).json({ success: false, message: 'Provided email does not match user' });
-
-    // Record visitor if the requester is NOT the profile owner and NOT anonymous
     try {
-      const viewerId = req.user && req.user.userId ? req.user.userId.toString() : null;
-      const targetId = userId.toString();
+        const verification = await verifyUserTokenAndEmail(req);
+        if (!verification.success) return res.status(200).json(verification);
 
-      if (viewerId && viewerId !== targetId) {
-        // Check if viewer is anonymous
-        const viewer = await User.findById(viewerId).select('beAnonymous');
-        if (!viewer?.beAnonymous) {
-          user.profileVisitors = user.profileVisitors || [];
-          const existing = user.profileVisitors.find(v => v.visitorId.toString() === viewerId);
-          const now = new Date();
+        const { userId, email } = req.body;
+        if (!userId || !email)
+            return res.status(400).json({ success: false, message: 'userId and email required in body' });
 
-          if (existing) {
-            existing.visitedAt = now;
-          } else {
-            user.profileVisitors.push({ visitorId: viewerId, visitedAt: now });
-          }
+        // Get the profile owner document
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+        if (user.email !== email)
+            return res.status(403).json({ success: false, message: 'Provided email does not match user' });
 
-          // keep only last 200 visitors
-          if (user.profileVisitors.length > 200) {
-            user.profileVisitors.sort((a, b) => new Date(b.visitedAt) - new Date(a.visitedAt));
-            user.profileVisitors = user.profileVisitors.slice(0, 200);
-          }
-          await user.save();
+        // Record visitor if the requester is NOT the profile owner and NOT anonymous
+        try {
+            const viewerId = req.user && req.user.userId ? req.user.userId.toString() : null;
+            const targetId = userId.toString();
 
-          // FCM push notification if the profile owner has fcmToken
-          if (user.fcmToken) {
-            try {
-              await admin.messaging().send({
-                token: user.fcmToken,
-                notification: {
-                  title: 'Profile Viewed',
-                  body: 'Your profile was viewed by someone.',
-                },
-                data: {
-                  type: 'PROFILE_VIEW',
-                  viewerId: viewerId,
-                  timestamp: now.toISOString(),
-                },
-              });
-            } catch (err) {
-              console.error('FCM send error:', err.message);
+            if (viewerId && viewerId !== targetId) {
+                // Check if viewer is anonymous
+                const viewer = await User.findById(viewerId).select('beAnonymous');
+                if (!viewer?.beAnonymous) {
+                    user.profileVisitors = user.profileVisitors || [];
+                    const existing = user.profileVisitors.find(v => v.visitorId.toString() === viewerId);
+                    const now = new Date();
+
+                    if (existing) {
+                        existing.visitedAt = now;
+                    } else {
+                        user.profileVisitors.push({ visitorId: viewerId, visitedAt: now });
+                    }
+
+                    // keep only last 200 visitors
+                    if (user.profileVisitors.length > 200) {
+                        user.profileVisitors.sort((a, b) => new Date(b.visitedAt) - new Date(a.visitedAt));
+                        user.profileVisitors = user.profileVisitors.slice(0, 200);
+                    }
+                    await user.save();
+
+                    // FCM push notification if the profile owner has fcmToken
+                    if (user.fcmToken) {
+                        try {
+                            await admin.messaging().send({
+                                token: user.fcmToken,
+                                notification: {
+                                    title: 'Profile Viewed',
+                                    body: 'Your profile was viewed by someone.',
+                                },
+                                data: {
+                                    type: 'PROFILE_VIEW',
+                                    viewerId: viewerId,
+                                    timestamp: now.toISOString(),
+                                },
+                            });
+                        } catch (err) {
+                            console.error('FCM send error:', err.message);
+                        }
+                    }
+                }
+                // else: do not record or notify if viewer is anonymous
             }
-          }
+        } catch (recErr) {
+            // Don't fail the profile fetch if updating visitor fails; just log
+            console.error('Error recording profile visitor:', recErr);
         }
-        // else: do not record or notify if viewer is anonymous
-      }
-    } catch (recErr) {
-      // Don't fail the profile fetch if updating visitor fails; just log
-      console.error('Error recording profile visitor:', recErr);
-    }
 
-    // Return a plain object
-    const safeUser = user.toObject();
-    return res.json({ success: true, user: safeUser });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ success: false, message: 'Server error' });
-  }
+        // Return a plain object
+        const safeUser = user.toObject();
+        return res.json({ success: true, user: safeUser });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false, message: 'Server error' });
+    }
 };
 
 // New: fetch profile visitors (returns list of visitors with basic info)
@@ -7776,188 +7776,188 @@ exports.getHideMutualFriends = async (req, res) => {
 
 // Update Be Anonymous setting
 exports.updateBeAnonymous = async (req, res) => {
-  try {
-    const verification = await verifyUserTokenAndEmail(req);
-    if (!verification.success) return res.status(200).json(verification);
+    try {
+        const verification = await verifyUserTokenAndEmail(req);
+        if (!verification.success) return res.status(200).json(verification);
 
-    const { beAnonymous } = req.body;
-    if (typeof beAnonymous !== 'boolean') {
-      return res.status(400).json({ success: false, message: 'beAnonymous must be boolean.' });
+        const { beAnonymous } = req.body;
+        if (typeof beAnonymous !== 'boolean') {
+            return res.status(400).json({ success: false, message: 'beAnonymous must be boolean.' });
+        }
+        const user = await User.findByIdAndUpdate(
+            req.user.userId,
+            { beAnonymous },
+            { new: true }
+        );
+        res.status(200).json({ success: true, beAnonymous: user.beAnonymous });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
     }
-    const user = await User.findByIdAndUpdate(
-      req.user.userId,
-      { beAnonymous },
-      { new: true }
-    );
-    res.status(200).json({ success: true, beAnonymous: user.beAnonymous });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
 };
 
 // Get Be Anonymous setting
 exports.getBeAnonymous = async (req, res) => {
-  try {
-    const verification = await verifyUserTokenAndEmail(req);
-    if (!verification.success) return res.status(200).json(verification);
+    try {
+        const verification = await verifyUserTokenAndEmail(req);
+        if (!verification.success) return res.status(200).json(verification);
 
-    const user = await User.findById(req.user.userId).select('beAnonymous');
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-    res.status(200).json({ success: true, beAnonymous: user.beAnonymous });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+        const user = await User.findById(req.user.userId).select('beAnonymous');
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+        res.status(200).json({ success: true, beAnonymous: user.beAnonymous });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
 };
 
 exports.addToCloseFriends = async (req, res) => {
-  try {
-    const verification = await verifyUserTokenAndEmail(req);
-    if (!verification.success) return res.status(200).json(verification);
-    const { userId, friendId } = req.body;
-    if (!userId || !friendId) {
-      return res.status(400).json({ success: false, message: "userId and friendId are required" });
-    }
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    try {
+        const verification = await verifyUserTokenAndEmail(req);
+        if (!verification.success) return res.status(200).json(verification);
+        const { userId, friendId } = req.body;
+        if (!userId || !friendId) {
+            return res.status(400).json({ success: false, message: "userId and friendId are required" });
+        }
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    if (!user.userAllFriends.includes(friendId)) {
-      return res.status(400).json({ success: false, message: "Can only add existing friends to close friends" });
-    }
+        if (!user.userAllFriends.includes(friendId)) {
+            return res.status(400).json({ success: false, message: "Can only add existing friends to close friends" });
+        }
 
-    if (!user.closeFriends) user.closeFriends = [];
-    if (!user.closeFriends.includes(friendId)) {
-      user.closeFriends.push(friendId);
-      await user.save();
+        if (!user.closeFriends) user.closeFriends = [];
+        if (!user.closeFriends.includes(friendId)) {
+            user.closeFriends.push(friendId);
+            await user.save();
+        }
+        res.json({ success: true, message: "Added to close friends" });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
     }
-    res.json({ success: true, message: "Added to close friends" });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
 };
 
 exports.removeFromCloseFriends = async (req, res) => {
-  try {
-    const verification = await verifyUserTokenAndEmail(req);
-    if (!verification.success) return res.status(200).json(verification);
-    const { userId, friendId } = req.body;
-    if (!userId || !friendId) {
-      return res.status(400).json({ success: false, message: "userId and friendId are required" });
-    }
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    try {
+        const verification = await verifyUserTokenAndEmail(req);
+        if (!verification.success) return res.status(200).json(verification);
+        const { userId, friendId } = req.body;
+        if (!userId || !friendId) {
+            return res.status(400).json({ success: false, message: "userId and friendId are required" });
+        }
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    user.closeFriends = (user.closeFriends || []).filter(id => id.toString() !== friendId.toString());
-    await user.save();
-    res.json({ success: true, message: "Removed from close friends" });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
+        user.closeFriends = (user.closeFriends || []).filter(id => id.toString() !== friendId.toString());
+        await user.save();
+        res.json({ success: true, message: "Removed from close friends" });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
 };
 
 exports.getCloseFriends = async (req, res) => {
-  try {
-    const verification = await verifyUserTokenAndEmail(req);
-    if (!verification.success) return res.status(200).json(verification);
-    const { userId } = req.body;
-    if (!userId) {
-      return res.status(400).json({ success: false, message: "userId is required" });
-    }
-    const user = await User.findById(userId).populate('closeFriends', 'fullName userName profilePic isOnline');
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    try {
+        const verification = await verifyUserTokenAndEmail(req);
+        if (!verification.success) return res.status(200).json(verification);
+        const { userId } = req.body;
+        if (!userId) {
+            return res.status(400).json({ success: false, message: "userId is required" });
+        }
+        const user = await User.findById(userId).populate('closeFriends', 'fullName userName profilePic isOnline');
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    res.json({ success: true, closeFriends: user.closeFriends || [] });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
+        res.json({ success: true, closeFriends: user.closeFriends || [] });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
 };
 
 /**
  * Get all user activities for a specific date (My Activity)
  */
 exports.getMyActivityByDate = async (req, res) => {
-  try {
-    const { email, token, date } = req.body;
-    if (!email || !token || !date) {
-      return res.status(400).json({ success: false, message: "email, token, and date are required" });
+    try {
+        const { email, token, date } = req.body;
+        if (!email || !token || !date) {
+            return res.status(400).json({ success: false, message: "email, token, and date are required" });
+        }
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        const start = new Date(date);
+        const end = new Date(date);
+        end.setHours(23, 59, 59, 999);
+
+        // Posts
+        const posts = await Postcreate.find({ userId: user._id, createdAt: { $gte: start, $lte: end } });
+        // Moments
+        const moments = await Moment.find({ userId: user._id, createdAt: { $gte: start, $lte: end } });
+        // Photographs (posts with is_photography true)
+        const photographs = await Postcreate.find({ userId: user._id, is_photography: true, createdAt: { $gte: start, $lte: end } });
+
+        // Free credits and Teddy Coins (from user model)
+        const freeCredit = user.freeCredit || 0;
+        const teddyCoins = user.coinWallet || {};
+
+        // Average time spent (if tracked)
+        let avgTimeSpent = null;
+        if (user.loginStartTime && user.totalSessionTime) {
+            avgTimeSpent = user.totalSessionTime; // in seconds, adjust as needed
+        }
+
+        res.json({
+            success: true,
+            date,
+            posts,
+            moments,
+            photographs,
+            freeCredit,
+            teddyCoins,
+            avgTimeSpent
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
     }
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
-
-    const start = new Date(date);
-    const end = new Date(date);
-    end.setHours(23, 59, 59, 999);
-
-    // Posts
-    const posts = await Postcreate.find({ userId: user._id, createdAt: { $gte: start, $lte: end } });
-    // Moments
-    const moments = await Moment.find({ userId: user._id, createdAt: { $gte: start, $lte: end } });
-    // Photographs (posts with is_photography true)
-    const photographs = await Postcreate.find({ userId: user._id, is_photography: true, createdAt: { $gte: start, $lte: end } });
-
-    // Free credits and Teddy Coins (from user model)
-    const freeCredit = user.freeCredit || 0;
-    const teddyCoins = user.coinWallet || {};
-
-    // Average time spent (if tracked)
-    let avgTimeSpent = null;
-    if (user.loginStartTime && user.totalSessionTime) {
-      avgTimeSpent = user.totalSessionTime; // in seconds, adjust as needed
-    }
-
-    res.json({
-      success: true,
-      date,
-      posts,
-      moments,
-      photographs,
-      freeCredit,
-      teddyCoins,
-      avgTimeSpent
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
 };
 
 /**
  * Get all user interactions for a specific date (My Interactions)
  */
 exports.getMyInteractionsByDate = async (req, res) => {
-  try {
-    const { email, token, date } = req.body;
-    if (!email || !token || !date) {
-      return res.status(400).json({ success: false, message: "email, token, and date are required" });
+    try {
+        const { email, token, date } = req.body;
+        if (!email || !token || !date) {
+            return res.status(400).json({ success: false, message: "email, token, and date are required" });
+        }
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        const start = new Date(date);
+        const end = new Date(date);
+        end.setHours(23, 59, 59, 999);
+
+        // Saved Items
+        const savedItems = (user.savedItems || []).filter(s => s.savedAt >= start && s.savedAt <= end);
+
+        // Shares (receivedShares is for shares received; if you want shares given, you need to log them)
+        const shares = (user.receivedShares || []).filter(s => s.sharedAt >= start && s.sharedAt <= end);
+
+        // Coins Given, Opinions, Reports: You need separate models for these. Placeholders:
+        // const coinsGiven = await CoinTransaction.find({ from: user._id, createdAt: { $gte: start, $lte: end } });
+        // const opinions = await Opinion.find({ userId: user._id, createdAt: { $gte: start, $lte: end } });
+        // const reports = await Report.find({ userId: user._id, createdAt: { $gte: start, $lte: end } });
+
+        res.json({
+            success: true,
+            date,
+            // coinsGiven,
+            // opinions,
+            shares,
+            savedItems,
+            // reports
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
     }
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
-
-    const start = new Date(date);
-    const end = new Date(date);
-    end.setHours(23, 59, 59, 999);
-
-    // Saved Items
-    const savedItems = (user.savedItems || []).filter(s => s.savedAt >= start && s.savedAt <= end);
-
-    // Shares (receivedShares is for shares received; if you want shares given, you need to log them)
-    const shares = (user.receivedShares || []).filter(s => s.sharedAt >= start && s.sharedAt <= end);
-
-    // Coins Given, Opinions, Reports: You need separate models for these. Placeholders:
-    // const coinsGiven = await CoinTransaction.find({ from: user._id, createdAt: { $gte: start, $lte: end } });
-    // const opinions = await Opinion.find({ userId: user._id, createdAt: { $gte: start, $lte: end } });
-    // const reports = await Report.find({ userId: user._id, createdAt: { $gte: start, $lte: end } });
-
-    res.json({
-      success: true,
-      date,
-      // coinsGiven,
-      // opinions,
-      shares,
-      savedItems,
-      // reports
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
 };
 
 
