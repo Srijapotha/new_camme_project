@@ -458,13 +458,6 @@ exports.login = async (req, res) => {
 
         let user = await User.findOne({ email });
 
-        if (user.userName !== userName) {
-            return res.status(200).json({
-                success: false,
-                message: "User is not registered"
-            });
-        }
-
         if (!user) {
             return res.status(200).json({
                 success: false,
@@ -487,7 +480,12 @@ exports.login = async (req, res) => {
             })
         }
 
-
+        if (user.userName !== userName) {
+            return res.status(200).json({
+                success: false,
+                message: "Please Enter Correct username",
+            });
+        }
 
         const otp = generateOtp();
         const otpExpires = Date.now() + 10 * 60 * 200;
