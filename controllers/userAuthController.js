@@ -411,7 +411,14 @@ exports.login = async (req, res) => {
             })
         }
 
-        let user = await User.findOne({ $and: [{ email }, { userName }] });
+        let user = await User.findOne({ email });
+
+        if(user.userName !== userName){
+            return res.status(200).json({
+                success: false,
+                message: "User is not registered"
+            });
+        }
 
         if (!user) {
             return res.status(200).json({
