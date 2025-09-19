@@ -5367,7 +5367,6 @@ router.post('/getHideMutualFriends', getHideMutualFriends);
  *         description: Unauthorized
  */
 
-const { updateBeAnonymous, getBeAnonymous } = require("../controllers/userAuthController");
 
 router.post('/beAnonymous', updateBeAnonymous);
 router.post('/getBeAnonymous', getBeAnonymous);

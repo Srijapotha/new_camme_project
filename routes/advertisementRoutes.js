@@ -1,5 +1,5 @@
 const express = require('express');
-const { createBusinessAndAd, trackAdEvent, getAdAnalytics, getAdMetrics, createAdvertiserAccount, createAd } = require('../controllers/advertisementController');
+const { createBusinessAndAd, trackAdEvent, getAdAnalytics, getAdMetrics, createAdvertiserAccount, createAd, submitAdForm, getAdFormSubmissions, getAdById, submitAppInstallation, submitWebsiteEvent } = require('../controllers/advertisementController');
 const { authMiddleware } = require('../middleware/authMiddleware');
 const { uploadd } = require('../middleware/multer');
 const router = express.Router();
@@ -8,7 +8,7 @@ const router = express.Router();
  * @swagger
  * /ads/business/create:
  *   post:
- *     summary: Create a business profile and advertisement
+ *     summary: Create a business profile
  *     tags:
  *       - Advertisement
  *     security:
@@ -48,36 +48,13 @@ const router = express.Router();
  *                 type: string
  *               businessWebsite:
  *                 type: string
- *               typeOfAdContent:
- *                 type: string
- *               adElements:
- *                 type: string
- *               appStoreLink:
- *                 type: string
- *               playStoreLink:
- *                 type: string
- *               adModel:
- *                 type: string
- *               targetedAgeGroup:
- *                 type: array
- *                 items:
- *                   type: string
- *               interests:
- *                 type: array
- *                 items:
- *                   type: string
- *               locations:
- *                 type: object
- *               adContentUrl:
- *                 type: string
- *                 format: binary
  *               email:
  *                 type: string
  *               token:
  *                 type: string
  *     responses:
  *       201:
- *         description: "Business and ad created"
+ *         description: "Business created"
  *       401:
  *         description: "Unauthorized: email and token required"
  *       400:
@@ -112,17 +89,17 @@ router.post('/business/create', authMiddleware, uploadd.fields([{ name: 'certifi
  *               actions:
  *                 type: object
  *                 properties:
- *                   impression:
+ *                   impressions:
  *                     type: integer
- *                   click:
+ *                   clicks:
  *                     type: integer
- *                   view:
+ *                   views:
  *                     type: integer
- *                   engagement:
+ *                   engagements:
  *                     type: integer
- *                   install:
+ *                   installs:
  *                     type: integer
- *                   formSubmit:
+ *                   formSubmits:
  *                     type: integer
  *               email:
  *                 type: string
@@ -295,6 +272,13 @@ router.post('/advertiser/create', authMiddleware, uploadd.fields([{ name: 'certi
  *             type: object
  *             required:
  *               - advertiserId
+ *               - typeOfAdContent
+ *               - adElements
+ *               - adDescription
+ *               - adModel
+ *               - targetedAgeGroup
+ *               - interests
+ *               - locations
  *               - email
  *               - token
  *             properties:
@@ -302,28 +286,52 @@ router.post('/advertiser/create', authMiddleware, uploadd.fields([{ name: 'certi
  *                 type: string
  *               typeOfAdContent:
  *                 type: string
+ *                 enum: [image, video]
  *               adElements:
  *                 type: string
+ *                 enum: [app_installation, webpage, form]
+ *               adDescription:
+ *                 type: string
+ *                 maxLength: 500
+ *               adContentUrl:
+ *                 type: string
+ *                 description: URL to image or video content
+ *               websiteLink:
+ *                 type: string
+ *                 description: Required if adElements is 'webpage'
+ *               formFields:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Required if adElements is 'form'. List of selected form fields.
  *               appStoreLink:
  *                 type: string
+ *                 description: Required if adElements is 'app_installation'
  *               playStoreLink:
  *                 type: string
+ *                 description: Required if adElements is 'app_installation'
  *               adModel:
  *                 type: string
+ *                 enum: [premium, elite, ultimate, free]
  *               targetedAgeGroup:
  *                 type: array
  *                 items:
  *                   type: string
+ *                 description: List of age group keys (e.g., Teen, Young Adult, etc.)
  *               interests:
  *                 type: array
  *                 items:
  *                   type: string
  *               locations:
  *                 type: object
- *               adContentUrl:
+ *                 description: Location targeting object (countries, states, regions)
+ *               status:
  *                 type: string
+ *                 enum: [draft, preview]
+ *                 description: Save as draft or preview
  *               email:
  *                 type: string
+ *                 format: email
  *               token:
  *                 type: string
  *     responses:
@@ -339,5 +347,216 @@ router.post('/advertiser/create', authMiddleware, uploadd.fields([{ name: 'certi
  *         description: "Server error"
  */
 router.post('/ad/create', authMiddleware, createAd);
+
+/**
+ * @swagger
+ * /ads/ad/submit-form:
+ *   post:
+ *     summary: Submit form data for an ad
+ *     tags:
+ *       - Advertisement
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - adId
+ *               - formData
+ *               - email
+ *               - token
+ *             properties:
+ *               adId:
+ *                 type: string
+ *               userId:
+ *                 type: string
+ *                 description: Optional, if user is logged in
+ *               formData:
+ *                 type: object
+ *                 description: Field-value pairs for the form
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               token:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: "Form submitted"
+ *       400:
+ *         description: "Validation error"
+ *       401:
+ *         description: "Unauthorized: email and token required"
+ *       500:
+ *         description: "Server error"
+ */
+router.post('/ad/submit-form', authMiddleware, submitAdForm);
+
+/**
+ * @swagger
+ * /ads/ad/form-submissions:
+ *   post:
+ *     summary: Get all form submissions for an ad
+ *     tags:
+ *       - Advertisement
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - adId
+ *               - email
+ *               - token
+ *             properties:
+ *               adId:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               token:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: List of form submissions
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: "Unauthorized: email and token required"
+ *       500:
+ *         description: Server error
+ */
+router.post('/ad/form-submissions', authMiddleware, getAdFormSubmissions);
+
+/**
+ * @swagger
+ * /ads/ad/get-by-id:
+ *   post:
+ *     summary: Get advertisement details by adId
+ *     tags:
+ *       - Advertisement
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - adId
+ *               - email
+ *               - token
+ *             properties:
+ *               adId:
+ *                 type: string
+ *                 description: Advertisement ID
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               token:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Advertisement details
+ *       401:
+ *         description: "Unauthorized: email and token required"
+ *       400:
+ *         description: "Validation error"
+ *       404:
+ *         description: "Ad not found"
+ *       500:
+ *         description: "Server error"
+ */
+router.post('/ad/get-by-id', authMiddleware, getAdById);
+
+/**
+ * @swagger
+ * /ads/ad/install:
+ *   post:
+ *     summary: Track app installation event for an ad
+ *     tags:
+ *       - Advertisement
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - adId
+ *               - email
+ *               - token
+ *             properties:
+ *               adId:
+ *                 type: string
+ *               userId:
+ *                 type: string
+ *                 description: Optional, if user is logged in
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               token:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: "App installation tracked"
+ *       400:
+ *         description: "Validation error"
+ *       401:
+ *         description: "Unauthorized: email and token required"
+ *       500:
+ *         description: "Server error"
+ */
+router.post('/ad/install', authMiddleware, submitAppInstallation);
+
+/**
+ * @swagger
+ * /ads/ad/website-click:
+ *   post:
+ *     summary: Track website click event for an ad
+ *     tags:
+ *       - Advertisement
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - adId
+ *               - email
+ *               - token
+ *             properties:
+ *               adId:
+ *                 type: string
+ *               userId:
+ *                 type: string
+ *                 description: Optional, if user is logged in
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               token:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: "Website click tracked"
+ *       400:
+ *         description: "Validation error"
+ *       401:
+ *         description: "Unauthorized: email and token required"
+ *       500:
+ *         description: "Server error"
+ */
+router.post('/ad/website-click', authMiddleware, submitWebsiteEvent);
 
 module.exports = router;
