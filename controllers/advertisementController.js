@@ -2,16 +2,34 @@ const BusinessProfile = require('../models/adModels').BusinessProfile;
 const Advertisement = require('../models/adModels').Advertisement;
 const AdLocation = require('../models/adModels').AdLocation;
 const AdAnalytics = require('../models/adModels').AdAnalytics;
-const User = require('../models/User');
+const User = require('../models/userModel');
+const AdFormSubmission = require('../models/AdFormSubmission');
+const { v4: uuidv4 } = require('uuid');
+const validator = require('validator');
+const { verifyUserTokenAndEmail } = require('../middleware/addirionalSecurity');
 
 // Pricing config (should be in a config file or DB in production)
 const adPricing = {
+  free: {
+    form: { image: { CPC: 5, CPM: 145, CPV: 0, CPA: 8, CPE: 1.5, CPI: 50 }, video: { CPC: 5, CPM: 145, CPV: 0.75, CPA: 8, CPE: 1.5, CPI: 50 } },
+    app_installation: { image: { CPC: 5, CPM: 145, CPV: 0, CPA: 0, CPE: 1.5, CPI: 50 }, video: { CPC: 5, CPM: 145, CPV: 0.75, CPA: 0, CPE: 1.5, CPI: 50 } },
+    webpage: { image: { CPC: 5, CPM: 145, CPV: 0, CPA: 0, CPE: 1.5, CPI: 0 }, video: { CPC: 5, CPM: 145, CPV: 0.75, CPA: 0, CPE: 1.5, CPI: 0 } }
+  },
+  premium: {
+    form: { image: { CPC: 6, CPM: 150, CPV: 0, CPA: 10, CPE: 2, CPI: 60 }, video: { CPC: 8, CPM: 160, CPV: 1, CPA: 12, CPE: 2.5, CPI: 70 } },
+    app_installation: { image: { CPC: 6, CPM: 150, CPV: 0, CPA: 0, CPE: 2, CPI: 60 }, video: { CPC: 8, CPM: 160, CPV: 1, CPA: 0, CPE: 2.5, CPI: 70 } },
+    webpage: { image: { CPC: 6, CPM: 150, CPV: 0, CPA: 0, CPE: 2, CPI: 0 }, video: { CPC: 8, CPM: 160, CPV: 1, CPA: 0, CPE: 2.5, CPI: 0 } }
+  },
   elite: {
-    app_installation: { image: { CPC: 7, CPM: 145, CPV: 0, CPA: 0, CPE: 1.5, CPI: 45 }, video: { CPC: 10, CPM: 180, CPV: 0.75, CPA: 5, CPE: 2.5, CPI: 60 } },
     form: { image: { CPC: 4, CPM: 120, CPV: 0, CPA: 5, CPE: 1, CPI: 0 }, video: { CPC: 8, CPM: 160, CPV: 1, CPA: 9, CPE: 1.5, CPI: 0 } },
+    app_installation: { image: { CPC: 7, CPM: 145, CPV: 0, CPA: 0, CPE: 1.5, CPI: 45 }, video: { CPC: 10, CPM: 180, CPV: 0.75, CPA: 5, CPE: 2.5, CPI: 60 } },
     webpage: { image: { CPC: 2, CPM: 95, CPV: 0, CPA: 0, CPE: 0.75, CPI: 0 }, video: { CPC: 5, CPM: 135, CPV: 0.5, CPA: 0, CPE: 1.5, CPI: 0 } }
   },
-  // ...add premium and ultimate as per your table
+  ultimate: {
+    form: { image: { CPC: 10, CPM: 200, CPV: 0, CPA: 15, CPE: 3, CPI: 100 }, video: { CPC: 12, CPM: 220, CPV: 2, CPA: 18, CPE: 3.5, CPI: 120 } },
+    app_installation: { image: { CPC: 10, CPM: 200, CPV: 0, CPA: 0, CPE: 3, CPI: 100 }, video: { CPC: 12, CPM: 220, CPV: 2, CPA: 0, CPE: 3.5, CPI: 120 } },
+    webpage: { image: { CPC: 10, CPM: 200, CPV: 0, CPA: 0, CPE: 3, CPI: 0 }, video: { CPC: 12, CPM: 220, CPV: 2, CPA: 0, CPE: 3.5, CPI: 0 } }
+  }
 };
 
 // Helper: enforce ad model limits
@@ -49,38 +67,27 @@ function checkAdModelLimits(adModel, { ageGroups, interests, locations }) {
   return null;
 }
 
-// Business and Ad creation
+// Business profile creation (for /ads/business/create)
 exports.createBusinessAndAd = async (req, res) => {
   try {
-    // 1. Create Business Profile
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
     const business = await BusinessProfile.create({
-      user: req.user._id,
-      ...req.body,
-      businessCertificates: req.files?.certificates?.map(f => f.path) || []
+      user: req.user.userId,
+      businessTheme: req.body.businessTheme,
+      businessProfile: req.body.businessProfile,
+      businessName: req.body.businessName,
+      industrialSector: req.body.industrialSector,
+      aboutBusiness: req.body.aboutBusiness,
+      businessCertificates: req.files?.certificates?.map(f => f.path) || [],
+      businessMobileNumber: req.body.businessMobileNumber,
+      businessEmail: req.body.businessEmail,
+      businessLocation: req.body.businessLocation,
+      businessWebsite: req.body.businessWebsite
     });
-    // 2. Create Location
-    const locations = await AdLocation.create(req.body.locations);
-    // 3. Enforce ad model limits
-    const limitError = checkAdModelLimits(req.body.adModel, {
-      ageGroups: req.body.targetedAgeGroup,
-      interests: req.body.interests,
-      locations: req.body.locations
-    });
-    if (limitError) return res.status(400).json({ success: false, message: limitError });
-    // 4. Create Advertisement
-    const ad = await Advertisement.create({
-      business: business._id,
-      typeOfAdContent: req.body.typeOfAdContent,
-      adContentUrl: req.body.adContentUrl,
-      adElements: req.body.adElements,
-      appStoreLink: req.body.appStoreLink,
-      playStoreLink: req.body.playStoreLink,
-      adModel: req.body.adModel,
-      targetedAgeGroup: req.body.targetedAgeGroup,
-      interests: req.body.interests,
-      locations: locations._id
-    });
-    res.status(201).json({ success: true, business, ad });
+    res.status(201).json({ success: true, business });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -88,10 +95,13 @@ exports.createBusinessAndAd = async (req, res) => {
 
 // Advertiser (business) account creation
 exports.createAdvertiserAccount = async (req, res) => {
-  if (!(await verifyAuth(req))) return res.status(401).json({ success: false, message: 'Unauthorized: email and token required' });
   try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
     const business = await BusinessProfile.create({
-      user: req.user?._id,
+      user: req.user.userId,
       ...req.body,
       businessCertificates: req.files?.certificates?.map(f => f.path) || []
     });
@@ -103,33 +113,70 @@ exports.createAdvertiserAccount = async (req, res) => {
 
 // Ad creation (requires advertiserId)
 exports.createAd = async (req, res) => {
-  if (!(await verifyAuth(req))) return res.status(401).json({ success: false, message: 'Unauthorized: email and token required' });
   try {
-    const { advertiserId } = req.body;
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { advertiserId, typeOfAdContent, adElements, adContentUrl, adDescription, websiteLink, formFields, appStoreLink, playStoreLink, targetedAgeGroup, interests, locations, adModel, status } = req.body;
     if (!advertiserId) return res.status(400).json({ success: false, message: 'advertiserId is required' });
-    const business = await BusinessProfile.findById(advertiserId);
-    if (!business) return res.status(404).json({ success: false, message: 'Advertiser not found' });
+    if (!typeOfAdContent || !['image', 'video'].includes(typeOfAdContent)) return res.status(400).json({ success: false, message: 'Invalid ad content type' });
+    if (!adElements || !['app_installation', 'webpage', 'form'].includes(adElements)) return res.status(400).json({ success: false, message: 'Invalid ad element' });
+    if (!adDescription || adDescription.length > 500) return res.status(400).json({ success: false, message: 'Description required, max 500 chars' });
+    // Validate content
+    if (typeOfAdContent === 'image' && !adContentUrl) return res.status(400).json({ success: false, message: 'Image content required' });
+    if (typeOfAdContent === 'video') {
+      if (!adContentUrl) return res.status(400).json({ success: false, message: 'Video content required' });
+      // Optionally: check video duration (should be 30s)
+      // This requires video metadata extraction, which is best done on upload
+    }
+    // Validate ad element specific fields
+    let adData = {};
+    if (adElements === 'webpage') {
+      if (!websiteLink || !validator.isURL(websiteLink)) return res.status(400).json({ success: false, message: 'Valid website link required' });
+      adData.websiteLink = websiteLink;
+    }
+    if (adElements === 'form') {
+      if (!Array.isArray(formFields) || formFields.length === 0) return res.status(400).json({ success: false, message: 'At least one form field required' });
+      adData.formFields = formFields;
+    }
+    if (adElements === 'app_installation') {
+      if (!appStoreLink || !validator.isURL(appStoreLink)) return res.status(400).json({ success: false, message: 'Valid App Store link required' });
+      if (!playStoreLink || !validator.isURL(playStoreLink)) return res.status(400).json({ success: false, message: 'Valid Play Store link required' });
+      adData.appStoreLink = appStoreLink;
+      adData.playStoreLink = playStoreLink;
+    }
     // Create Location
-    const locations = await AdLocation.create(req.body.locations);
+    const adLocation = await AdLocation.create(locations);
     // Enforce ad model limits
-    const limitError = checkAdModelLimits(req.body.adModel, {
-      ageGroups: req.body.targetedAgeGroup,
-      interests: req.body.interests,
-      locations: req.body.locations
+    const limitError = checkAdModelLimits(adModel, {
+      ageGroups: targetedAgeGroup,
+      interests,
+      locations
     });
     if (limitError) return res.status(400).json({ success: false, message: limitError });
+    // Generate unique URL
+    const uniqueUrl = `/ad/${uuidv4()}`;
+
+    // Set initial wallet for Free model
+    let walletInit = undefined;
+    if (adModel === 'free') walletInit = 2500;
+
     // Create Advertisement
     const ad = await Advertisement.create({
-      business: business._id,
-      typeOfAdContent: req.body.typeOfAdContent,
-      adContentUrl: req.body.adContentUrl,
-      adElements: req.body.adElements,
-      appStoreLink: req.body.appStoreLink,
-      playStoreLink: req.body.playStoreLink,
-      adModel: req.body.adModel,
-      targetedAgeGroup: req.body.targetedAgeGroup,
-      interests: req.body.interests,
-      locations: locations._id
+      business: advertiserId,
+      typeOfAdContent,
+      adContentUrl,
+      adDescription,
+      adElements,
+      ...adData,
+      targetedAgeGroup,
+      interests,
+      locations: adLocation._id,
+      adModel,
+      status: status || 'draft',
+      uniqueUrl,
+      ...(walletInit !== undefined ? { wallet: walletInit } : {})
     });
     res.status(201).json({ success: true, ad });
   } catch (err) {
@@ -140,22 +187,59 @@ exports.createAd = async (req, res) => {
 // Ad event tracking and billing
 exports.trackAdEvent = async (req, res) => {
   try {
-    const { adId, actions } = req.body; // actions: { impression, click, view, engagement, install, formSubmit }
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { adId, actions, userId } = req.body;
     const ad = await Advertisement.findById(adId);
     if (!ad) return res.status(404).json({ success: false, message: 'Ad not found' });
     // Update analytics
     Object.keys(actions).forEach(key => {
       ad.analytics[key] += actions[key] || 0;
     });
+    // Insert AdAnalytics events for each action
+    const eventMap = {
+      impressions: 'impression',
+      clicks: 'click',
+      views: 'view',
+      engagements: 'engagement',
+      installs: 'install',
+      formSubmits: 'formSubmit',
+      // impression: 'impression',
+      // click: 'click',
+      // view: 'view',
+      // engagement: 'engagement',
+      // install: 'install',
+      // formSubmit: 'formSubmit'
+    };
+    for (const key in actions) {
+      if (actions[key] > 0 && eventMap[key]) {
+        for (let i = 0; i < actions[key]; i++) {
+          await AdAnalytics.create({
+            ad: adId,
+            eventType: eventMap[key],
+            user: userId || null,
+            timestamp: new Date()
+          });
+        }
+      }
+    }
     // Calculate cost
     const rates = adPricing[ad.adModel][ad.adElements][ad.typeOfAdContent];
     let total = 0;
-    if (actions.impression) total += (rates.CPM / 1000) * actions.impression;
-    if (actions.click) total += rates.CPC * actions.click;
-    if (actions.view) total += (rates.CPV || 0) * actions.view;
-    if (actions.engagement) total += rates.CPE * actions.engagement;
-    if (actions.install) total += (rates.CPI || 0) * actions.install;
-    if (actions.formSubmit) total += (rates.CPA || 0) * actions.formSubmit;
+    if (actions.impressions) total += (rates.CPM / 1000) * actions.impressions;
+    if (actions.clicks) total += rates.CPC * actions.clicks;
+    if (actions.views) total += (rates.CPV || 0) * actions.views;
+    if (actions.engagements) total += rates.CPE * actions.engagements;
+    if (actions.installs) total += (rates.CPI || 0) * actions.installs;
+    if (actions.formSubmits) total += (rates.CPA || 0) * actions.formSubmits;
+    // if (actions.impression) total += (rates.CPM / 1000) * actions.impression;
+    // if (actions.click) total += rates.CPC * actions.click;
+    // if (actions.view) total += (rates.CPV || 0) * actions.view;
+    // if (actions.engagement) total += rates.CPE * actions.engagement;
+    // if (actions.install) total += (rates.CPI || 0) * actions.install;
+    // if (actions.formSubmit) total += (rates.CPA || 0) * actions.formSubmit;
     // Deduct from wallet
     let walletBefore = ad.wallet;
     if (ad.wallet > 0) {
@@ -181,7 +265,12 @@ exports.trackAdEvent = async (req, res) => {
 // Analytics endpoint
 exports.getAdAnalytics = async (req, res) => {
   try {
-    const ad = await Advertisement.findById(req.params.adId);
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { adId } = req.body;
+    const ad = await Advertisement.findById(adId);
     if (!ad) return res.status(404).json({ success: false, message: 'Ad not found' });
     res.json({ success: true, analytics: ad.analytics, billing: ad.billing, wallet: ad.wallet });
   } catch (err) {
@@ -192,7 +281,11 @@ exports.getAdAnalytics = async (req, res) => {
 // Metrics endpoint
 exports.getAdMetrics = async (req, res) => {
   try {
-    const adId = req.params.adId;
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { adId } = req.body;
     const ad = await Advertisement.findById(adId).populate('business');
     if (!ad) return res.status(404).json({ success: false, message: 'Ad not found' });
     const analytics = ad.analytics;
@@ -249,6 +342,221 @@ exports.getAdMetrics = async (req, res) => {
         users: engagementUsers
       }
     });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// User submits form data for an ad
+exports.submitAdForm = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { adId, formData, userId } = req.body;
+    if (!adId || !formData) return res.status(400).json({ success: false, message: 'adId and formData are required' });
+
+    // Save the form submission
+    const submission = await AdFormSubmission.create({
+      adId,
+      userId: userId || null,
+      formData
+    });
+
+    // Only track the formSubmit action
+    const actions = { formSubmits: 1 };
+    const eventMap = { formSubmits: 'formSubmit' };
+    await AdAnalytics.create({
+      ad: adId,
+      eventType: eventMap.formSubmits,
+      user: userId || null,
+      timestamp: new Date()
+    });
+    await Advertisement.findByIdAndUpdate(adId, { $inc: { 'analytics.formSubmits': 1 } });
+    // Billing logic
+    const ad = await Advertisement.findById(adId);
+    if (!ad) return res.status(404).json({ success: false, message: 'Ad not found' });
+    const rates = adPricing[ad.adModel][ad.adElements][ad.typeOfAdContent];
+    const total = (rates.CPA || 0) * actions.formSubmits;
+    let walletBefore = ad.wallet;
+    if (ad.wallet > 0) {
+      if (ad.wallet >= total) {
+        ad.wallet -= total;
+      } else {
+        ad.billing.overage += (total - ad.wallet);
+        ad.wallet = 0;
+      }
+    } else {
+      ad.billing.overage += total;
+    }
+    ad.billing.totalSpent += total;
+    if (ad.wallet <= 0 && ad.adModel === 'free') ad.isActive = false;
+    await ad.save();
+
+    res.status(201).json({
+      success: true,
+      submission,
+      walletBefore,
+      walletAfter: ad.wallet,
+      cost: total,
+      overage: ad.billing.overage
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// App installation event (only track install)
+exports.submitAppInstallation = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { adId, userId } = req.body;
+    if (!adId) return res.status(400).json({ success: false, message: 'adId is required' });
+
+    // Only track the install action
+    const actions = { installs: 1 };
+    const eventMap = { installs: 'install' };
+    await AdAnalytics.create({
+      ad: adId,
+      eventType: eventMap.installs,
+      user: userId || null,
+      timestamp: new Date()
+    });
+    await Advertisement.findByIdAndUpdate(adId, { $inc: { 'analytics.installs': 1 } });
+    // Billing logic
+    const ad = await Advertisement.findById(adId);
+    if (!ad) return res.status(404).json({ success: false, message: 'Ad not found' });
+    const rates = adPricing[ad.adModel][ad.adElements][ad.typeOfAdContent];
+    const total = (rates.CPI || 0) * actions.installs;
+    let walletBefore = ad.wallet;
+    if (ad.wallet > 0) {
+      if (ad.wallet >= total) {
+        ad.wallet -= total;
+      } else {
+        ad.billing.overage += (total - ad.wallet);
+        ad.wallet = 0;
+      }
+    } else {
+      ad.billing.overage += total;
+    }
+    ad.billing.totalSpent += total;
+    if (ad.wallet <= 0 && ad.adModel === 'free') ad.isActive = false;
+    await ad.save();
+
+    res.status(201).json({
+      success: true,
+      walletBefore,
+      walletAfter: ad.wallet,
+      cost: total,
+      overage: ad.billing.overage
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Website event (only track click)
+exports.submitWebsiteEvent = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { adId, userId } = req.body;
+    if (!adId) return res.status(400).json({ success: false, message: 'adId is required' });
+
+    // Only track the click action
+    const actions = { clicks: 1 };
+    const eventMap = { clicks: 'click' };
+    await AdAnalytics.create({
+      ad: adId,
+      eventType: eventMap.clicks,
+      user: userId || null,
+      timestamp: new Date()
+    });
+    await Advertisement.findByIdAndUpdate(adId, { $inc: { 'analytics.clicks': 1 } });
+    // Billing logic
+    const ad = await Advertisement.findById(adId);
+    if (!ad) return res.status(404).json({ success: false, message: 'Ad not found' });
+    const rates = adPricing[ad.adModel][ad.adElements][ad.typeOfAdContent];
+    const total = rates.CPC * actions.clicks;
+    let walletBefore = ad.wallet;
+    if (ad.wallet > 0) {
+      if (ad.wallet >= total) {
+        ad.wallet -= total;
+      } else {
+        ad.billing.overage += (total - ad.wallet);
+        ad.wallet = 0;
+      }
+    } else {
+      ad.billing.overage += total;
+    }
+    ad.billing.totalSpent += total;
+    if (ad.wallet <= 0 && ad.adModel === 'free') ad.isActive = false;
+    await ad.save();
+
+    res.status(201).json({
+      success: true,
+      walletBefore,
+      walletAfter: ad.wallet,
+      cost: total,
+      overage: ad.billing.overage
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+}
+
+// Advertiser fetches all form submissions for an ad
+exports.getAdFormSubmissions = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { adId } = req.body;
+    if (!adId) return res.status(400).json({ success: false, message: 'adId is required' });
+    const submissions = await AdFormSubmission.find({ adId });
+    res.json({ success: true, submissions });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Get ad by ID
+exports.getAdById = async (req, res) => {
+  try {
+    const verification = await verifyUserTokenAndEmail(req);
+    if (!verification.success) {
+      return res.status(200).json(verification);
+    }
+    const { adId } = req.body;
+    if (!adId) return res.status(400).json({ success: false, message: 'adId is required' });
+    const ad = await Advertisement.findById(adId).populate('business');
+    if (!ad) return res.status(404).json({ success: false, message: 'Ad not found' });
+    const adDetails = {
+      _id: ad._id,
+      business: ad.business,
+      typeOfAdContent: ad.typeOfAdContent,
+      adContentUrl: ad.adContentUrl,
+      adDescription: ad.adDescription,
+      adElements: ad.adElements,
+      appStoreLink: ad.appStoreLink,
+      playStoreLink: ad.playStoreLink,
+      adModel: ad.adModel,
+      targetedAgeGroup: ad.targetedAgeGroup,
+      interests: ad.interests,
+      locations: ad.locations,
+      status: ad.status,
+      uniqueUrl: ad.uniqueUrl,
+      createdAt: ad.createdAt,
+      formFields: ad.adElements === 'form' ? ad.formFields : undefined
+    };
+    res.json({ success: true, ad: adDetails });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

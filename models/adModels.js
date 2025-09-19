@@ -15,15 +15,12 @@ const businessProfileSchema = new mongoose.Schema({
   businessWebsite: String,
 }, { timestamps: true });
 
-module.exports = mongoose.model('BusinessProfile', businessProfileSchema);
-
 // AdLocation model
 const citySchema = new mongoose.Schema({ name: String, count: { type: Number, default: 0 } });
 const districtSchema = new mongoose.Schema({ name: String, cities: [citySchema], count: { type: Number, default: 0 } });
 const stateSchema = new mongoose.Schema({ name: String, districts: [districtSchema], count: { type: Number, default: 0 } });
 const countrySchema = new mongoose.Schema({ name: String, states: [stateSchema], count: { type: Number, default: 0 } });
 const adLocationSchema = new mongoose.Schema({ countries: [countrySchema] });
-module.exports = mongoose.model('AdLocation', adLocationSchema);
 
 // Advertisement model
 const advertisementSchema = new mongoose.Schema({
@@ -37,6 +34,7 @@ const advertisementSchema = new mongoose.Schema({
   targetedAgeGroup: [String],
   interests: [String],
   locations: { type: mongoose.Schema.Types.ObjectId, ref: 'AdLocation' },
+  formFields: [String], // Added for form ads
   wallet: { type: Number, default: 2500 }, // initial free credit
   isActive: { type: Boolean, default: true },
   analytics: {
@@ -53,8 +51,6 @@ const advertisementSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Advertisement', advertisementSchema);
-
 // AdAnalytics model (optional, for per-event logging)
 const adAnalyticsSchema = new mongoose.Schema({
   ad: { type: mongoose.Schema.Types.ObjectId, ref: 'Advertisement', required: true },
@@ -63,4 +59,14 @@ const adAnalyticsSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('AdAnalytics', adAnalyticsSchema);
+const BusinessProfile = mongoose.model('BusinessProfile', businessProfileSchema);
+const AdLocation = mongoose.model('AdLocation', adLocationSchema);
+const Advertisement = mongoose.model('Advertisement', advertisementSchema);
+const AdAnalytics = mongoose.model('AdAnalytics', adAnalyticsSchema);
+
+module.exports = {
+  BusinessProfile,
+  AdLocation,
+  Advertisement,
+  AdAnalytics
+};
