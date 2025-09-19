@@ -58,6 +58,12 @@ exports.register = async (req, res) => {
 
         let user = await User.findOne({ email });
         if (user) {
+            if (!user.userName) {
+                return res.status(200).json({
+                    success: false,
+                    message: 'Please create a userName and password to complete registration.',
+                });
+            }
             return res.status(200).json({
                 success: false,
                 message: 'User already exists',
@@ -86,10 +92,41 @@ exports.register = async (req, res) => {
         const otpExpires = Date.now() + 2 * 60 * 1000; // 2 minutes
 
 
+        // let profilePicUrl = `https://api.dicebear.com/5.x/initials/svg?seed=${encodeURIComponent(fullName)}`;
+        // if (req.files.profilePic) {
+        //     const profileUpload = await cloudinary.uploader.upload(req.files.profilePic[0].path, {
+        //         folder: 'profile_pics',
+        //     });
+        //     profilePicUrl = profileUpload.secure_url;
+        // }
+
+        // let themeUrl = '';
+        // if (req.files.theme) {
+        //     const themeUpload = await cloudinary.uploader.upload(req.files.theme[0].path, {
+        //         folder: 'profile_pics'
+        //     });
+        //     themeUrl = themeUpload.secure_url;
+        // }
+
+        // Allowed image extensions
+        const allowedImageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+
+        function isImageExtension(filename) {
+            const ext = filename.substring(filename.lastIndexOf('.')).toLowerCase();
+            return allowedImageExtensions.includes(ext);
+        }
+
         // Upload profilePic
         let profilePicUrl = `https://api.dicebear.com/5.x/initials/svg?seed=${encodeURIComponent(fullName)}`;
         if (req.files.profilePic) {
-            const profileUpload = await cloudinary.uploader.upload(req.files.profilePic[0].path, {
+            const profilePicFile = req.files.profilePic[0];
+            if (!isImageExtension(profilePicFile.originalname)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Only image files (.jpg, .jpeg, .png, .gif, .webp) are allowed for profilePic.'
+                });
+            }
+            const profileUpload = await cloudinary.uploader.upload(profilePicFile.path, {
                 folder: 'profile_pics',
             });
             profilePicUrl = profileUpload.secure_url;
@@ -98,11 +135,19 @@ exports.register = async (req, res) => {
         // Upload theme image
         let themeUrl = '';
         if (req.files.theme) {
-            const themeUpload = await cloudinary.uploader.upload(req.files.theme[0].path, {
+            const themeFile = req.files.theme[0];
+            if (!isImageExtension(themeFile.originalname)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Only image files (.jpg, .jpeg, .png, .gif, .webp) are allowed for theme.'
+                });
+            }
+            const themeUpload = await cloudinary.uploader.upload(themeFile.path, {
                 folder: 'profile_pics'
             });
             themeUrl = themeUpload.secure_url;
         }
+
 
         const randomSuffix = Math.floor(1000 + Math.random() * 9000); // 4-digit
         const userName = `${fullName.split(' ')[0].toLowerCase()}${randomSuffix}`;
@@ -413,7 +458,7 @@ exports.login = async (req, res) => {
 
         let user = await User.findOne({ email });
 
-        if(user.userName !== userName){
+        if (user.userName !== userName) {
             return res.status(200).json({
                 success: false,
                 message: "User is not registered"
