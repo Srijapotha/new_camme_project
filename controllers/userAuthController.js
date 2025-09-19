@@ -557,7 +557,7 @@ exports.loginOtpverify = async (req, res) => {
             })
         }
 
-        const token = await jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "2d" });
+        const token = await jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
 
         user.otp = undefined;
         user.otpExpires = undefined;
