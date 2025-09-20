@@ -90,6 +90,7 @@ exports.register = async (req, res) => {
 
         const otp = generateOtp();
         const otpExpires = Date.now() + 2 * 60 * 1000; // 2 minutes
+        // console.log("otp", otp);
 
 
         // let profilePicUrl = `https://api.dicebear.com/5.x/initials/svg?seed=${encodeURIComponent(fullName)}`;
@@ -905,15 +906,13 @@ exports.rejectLinkAccount = async (req, res) => {
 exports.logoutUser = async (req, res) => {
     try {
         const userId = req.user.userId;
-
-        // const { password } = req.body;
         const { email, token } = req.body;
 
         if (!email || !token) {
             return res.status(200).json({
                 sucess: false,
                 message: "Please Provide All Details"
-            })
+            });
         }
 
         const Token = req.header("Authorization"); // Bearer <token>
@@ -924,50 +923,36 @@ exports.logoutUser = async (req, res) => {
         const rawToken = Token.split(" ")[1];
         const decoded = jwt.decode(rawToken);
 
-        if (!decoded || !decoded.exp) {
-            return res.status(400).json({ message: "Invalid or expired token." });
+        let expiresAt;
+        if (decoded && decoded.exp) {
+            expiresAt = new Date(decoded.exp * 1000);
+        } else {
+            // Set to a far future date if no expiration
+            expiresAt = new Date(9999, 0, 1);
         }
 
-        const expiresAt = new Date(decoded.exp * 1000); // Safe to use now
-
         const blacklisted = new BlacklistedToken({ token: rawToken, expiresAt });
-
         await blacklisted.save();
 
-
-        // const user = await User.findById(userId);
-
-        // // if(user.password === )
-        // const isMatch = await bcrypt.compare(user.password, password);
         const authHeader = req.headers.authorization;
         const authorizedToken = authHeader.split(" ")[1];
-        const userEmail = await User.findById(userId)
+        const userEmail = await User.findById(userId);
 
-        // Compare provided token with authorized token
         if (token !== authorizedToken) {
             return res.status(403).json({
                 success: false,
                 message: "Provided token does not match authorized token",
             });
-        };
+        }
 
         if (userEmail.email !== email) {
             return res.status(200).json({
                 success: false,
                 message: "Provided email does not match authorized email",
             });
-        };
-
-        // if (!isMatch) {
-        //     return re.status(200).json({
-        //         sucess: false,
-        //         message: "user Password and input password is not match"
-        //     })
-        // }
-
+        }
 
         const now = new Date();
-
         const sessionDuration = Math.floor((now - userEmail.loginStartTime) / 1000);
 
         userEmail.totalSessionTime += sessionDuration;
